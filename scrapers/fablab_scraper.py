@@ -1,5 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
+# Assuming utils.logger is accessible, adjust path if necessary when running standalone
+# For project structure, this should work if scrapers/ and utils/ are sibling dirs.
+import sys, os
+# Add project root to sys.path for utils.logger import if running from scrapers directory
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 def scrape_fablab_events():
     """
@@ -9,14 +17,15 @@ def scrape_fablab_events():
         list: A list of dictionaries, where each dictionary represents an event.
               Returns an empty list if scraping fails or no events are found.
     """
-    url = "https://www.fablablivresp.prefeitura.sp.gov.br/busca?tipo=curso" # Changed URL
+    url = "https://www.fablablivresp.prefeitura.sp.gov.br/busca?tipo=curso"
     events = []
+    logger.info(f"Starting FabLab event scraping from URL: {url}")
 
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}")
+        logger.error(f"Error fetching URL {url}: {e}")
         return events
 
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -39,16 +48,17 @@ def scrape_fablab_events():
 
     if not event_cards:
         # Fallback to 'article.card-curso' if 'div.views-row' is not found
+        logger.info("No event cards found with 'div.views-row', trying 'article.card-curso'.")
         event_cards = soup.select('article.card-curso')
         if event_cards:
-            print(f"Found {len(event_cards)} event cards using selector 'article.card-curso'.")
+            logger.info(f"Found {len(event_cards)} event cards using selector 'article.card-curso'.")
         else:
-            print(f"No event cards found using 'div.views-row' or 'article.card-curso' on {url}. The website structure might have changed.")
+            logger.warning(f"No event cards found using 'div.views-row' or 'article.card-curso' on {url}. Website structure might have changed.")
             return events
     else:
-        print(f"Found {len(event_cards)} event cards using selector 'div.views-row'.")
+        logger.info(f"Found {len(event_cards)} event cards using selector 'div.views-row'.")
 
-    for card in event_cards:
+    for i, card in enumerate(event_cards):
         event = {}
         try:
             # Extract Title and Official event link
@@ -84,11 +94,24 @@ def scrape_fablab_events():
             if date_field:
                 datetime_text = date_field.text.strip()
             else: # Fallback: search for text node containing '*' and '|'
-                all_texts = card.find_all(string=True)
+                # This fallback might be too broad or pick up unintended text.
+                # Consider refining if it causes issues.
+                all_texts = card.find_all(string=True, recursive=False) # Check direct text children first
                 for text_node in all_texts:
-                    if '*' in text_node and '|' in text_node:
-                        datetime_text = text_node.strip().lstrip('*').strip()
+                    cleaned_node_text = text_node.strip()
+                    if cleaned_node_text.startswith('*') and '|' in cleaned_node_text:
+                        datetime_text = cleaned_node_text.lstrip('*').strip()
                         break
+                if not datetime_text: # If not found in direct children, search deeper but be more careful
+                    all_texts_recursive = card.find_all(string=True)
+                    for text_node_recursive in all_texts_recursive:
+                        cleaned_node_text_recursive = text_node_recursive.strip()
+                        if cleaned_node_text_recursive.startswith('*') and '|' in cleaned_node_text_recursive:
+                             # Ensure it's not part of something already captured, e.g. title or location.
+                             # This heuristic is tricky. A more stable selector is always better.
+                            if not title_link_element or (title_link_element and cleaned_node_text_recursive not in title_link_element.get_text(strip=True)):
+                                datetime_text = cleaned_node_text_recursive.lstrip('*').strip()
+                                break
 
             if datetime_text:
                 if "|" in datetime_text:
@@ -128,37 +151,48 @@ def scrape_fablab_events():
             # These might be text nodes or links within a 'views-field-field-tags' or similar.
             # From text output: "Sustentabilidade", "Corte e Costura"
             # These followed the location.
-            category_elements_text = []
+            category_texts = []
             # Try selector for tags field:
-            tags_field = card.select_one('div[class*="tags"], div[class*="tematica"], div[class*="area"]')
-            if tags_field:
+            # Common Drupal class for fields: .views-field-field-[your-field-name]
+            # More general: div with class containing "tags", "tematica", "area"
+            tags_container = card.select_one('div[class*="tags"], div[class*="tematica"], div[class*="area"], div.field--name-field-tags') # Added common Drupal pattern
+            if tags_container:
                 # Are they links or just text?
-                tag_links = tags_field.find_all('a')
+                tag_links = tags_container.find_all('a')
                 if tag_links:
-                     category_elements_text = [tag.text.strip() for tag in tag_links if tag.text.strip()]
+                     category_texts = [tag.text.strip() for tag in tag_links if tag.text.strip()]
                 else: # If no links, try to get text content, split by lines or common separators
-                     category_elements_text = [line.strip() for line in tags_field.text.split('\n') if line.strip()]
+                     category_texts = [line.strip() for line in tags_container.text.split('\n') if line.strip() and len(line.strip()) > 1] # Avoid single char/empty lines
 
-            if not category_elements_text: # Fallback: get all text after location if specific fields fail
-                # This is very heuristic.
-                # Find all text nodes after the location element's parent, or after title element if location not found
-                start_node = location_element.parent if location_element else title_link_element.parent if title_link_element else None
-                if start_node:
-                    for sibling in start_node.find_next_siblings():
-                        # Collect text from siblings, assuming they are categories
-                        # This needs refinement to avoid grabbing unwanted text
-                        sibling_text = sibling.get_text(separator='\n', strip=True)
+            # Fallback logic for categories (if specific field not found or empty)
+            if not category_texts and location_element:
+                # Heuristic: Try to get text nodes that are siblings of the location's parent, or title's parent
+                start_node_for_cat_search = location_element.parent if location_element.parent else (title_link_element.parent if title_link_element.parent else None)
+                if start_node_for_cat_search:
+                    for sibling in start_node_for_cat_search.find_next_siblings():
+                        sibling_text = sibling.get_text(separator=' ', strip=True)
                         if sibling_text:
-                             # Heuristic: categories are usually short, one or two words.
-                             possible_cats = [cat.strip() for cat in sibling_text.split('\n') if cat.strip() and len(cat.split()) < 4]
-                             category_elements_text.extend(possible_cats)
-                        if len(category_elements_text) >=2 : # Assume max 2-3 categories for this heuristic
+                            # Avoid taking very long text that might be descriptions
+                            if len(sibling_text) < 50: # Arbitrary length limit for category text
+                                category_texts.append(sibling_text)
+                            else:
+                                break # Stop if text is too long (likely not a category list)
+                        if len(category_texts) >= 2: # Assume max 2-3 categories for this heuristic
                             break
 
-
-            if category_elements_text:
-                event['category'] = ", ".join(list(dict.fromkeys(category_elements_text))) # Join and remove duplicates
-            else:
+            if category_texts:
+                # Clean up potential duplicates if multiple selectors found similar text
+                unique_categories = []
+                seen_categories = set()
+                for cat_text in category_texts:
+                    # Further split if a single string contains multiple categories (e.g. "Category1 / Category2")
+                    split_cats = [c.strip() for c in cat_text.replace('/', ',').split(',') if c.strip()]
+                    for cat in split_cats:
+                        if cat.lower() not in seen_categories:
+                            unique_categories.append(cat)
+                            seen_categories.add(cat.lower())
+                event['category'] = ", ".join(unique_categories)
+            else: # Last fallback: infer from title
                 event_text_lower = event.get('title', "").lower()
                 if "oficina" in event_text_lower:
                     event['category'] = "Oficina"
@@ -174,24 +208,31 @@ def scrape_fablab_events():
             event['description'] = "N/A (available on official event link)"
 
             events.append(event)
+            logger.debug(f"Successfully parsed event card {i+1}: {event.get('title')}")
 
         except Exception as e:
-            print(f"Error parsing an event card: {e}")
-            # Optionally, add the partially parsed event or skip it
+            logger.error(f"Error parsing an event card (index {i}): {e}", exc_info=True)
+            # Optionally add the partially parsed event or skip it
             # events.append({"title": event.get('title', "Error parsing event"), "error": str(e), "link": event.get('official_event_link')})
             continue
 
+    logger.info(f"FabLab scraping finished. Found {len(events)} events.")
     return events
 
 if __name__ == '__main__':
     # Example usage:
-    print("Scraping FabLab events...")
+    # Configure logger for standalone script execution (if not already configured by importing module)
+    # This is mainly for testing this script directly.
+    # In a project, the main entry point would configure logging.
+    if not logger.handlers: # Basic check, assumes default setup if handlers exist
+         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    logger.info("Starting FabLab scraper directly for testing...")
     scraped_events = scrape_fablab_events()
     if scraped_events:
-        print(f"Found {len(scraped_events)} events:")
+        logger.info(f"Found {len(scraped_events)} events:")
         for i, evt in enumerate(scraped_events):
-            print(f"\nEvent {i+1}:")
-            for key, value in evt.items():
-                print(f"  {key}: {value}")
+            # Using logger.info for structured output, could also just print for direct script test
+            logger.info(f"Event {i+1}: Title='{evt.get('title')}', Date='{evt.get('date')}', Location='{evt.get('location')}', Category='{evt.get('category')}'")
     else:
-        print("No events were scraped.")
+        logger.info("No events were scraped.")
