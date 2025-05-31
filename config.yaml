@@ -1,0 +1,6 @@
+# Configuration file for the application
+# Add API keys and other configurations here.
+
+# Example:
+# google_maps_api_key: "YOUR_API_KEY"
+# openai_api_key: "YOUR_API_KEY"
