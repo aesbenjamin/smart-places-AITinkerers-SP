@@ -1,77 +1,117 @@
-# This utility module provides functions to interact with Google Maps services.
-# API Key Management:
-# The Google Maps API key will eventually be loaded from a configuration file (e.g., config.yaml).
-# For now, functions will accept the api_key as a direct argument.
+# utils/maps.py
+"""
+Provides utility functions to interact with Google Maps services,
+including geocoding addresses and fetching place details.
+
+API key management is handled internally by loading from `config.yaml`.
+"""
 
 import googlemaps
 from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
+from utils.config import load_config # Import the configuration loader
+from .logger import get_logger # Assuming logger.py is in the same directory (utils)
 
-# Placeholder for API key, to be replaced by config loading
-# GOOGLE_MAPS_API_KEY = "YOUR_API_KEY_HERE" # Load from config.yaml
+logger = get_logger(__name__)
 
-def get_geocode(api_key: str, address: str) -> dict | None:
+# Constant for the API key placeholder value from config.yaml
+API_KEY_PLACEHOLDER = "YOUR_GOOGLE_MAPS_API_KEY_HERE"
+
+def _get_maps_api_key() -> str | None:
     """
-    Geocodes an address to latitude and longitude coordinates using Google Maps API.
+    Helper function to load and retrieve the Google Maps API key from config.yaml.
 
-    Args:
-        api_key (str): Your Google Maps API key.
-        address (str): The address string to geocode.
+    It checks if the configuration can be loaded, if the 'api_keys' section and
+    'google_maps' key exist, and if the key is not the placeholder value.
+    Appropriate error messages are logged if issues are found.
 
     Returns:
-        dict | None: A dictionary with 'latitude' and 'longitude' if successful,
-                     otherwise None.
+        str | None: The Google Maps API key if found and valid, otherwise None.
     """
-    if not api_key:
-        print("Error: Google Maps API key is missing.")
+    config = load_config() # load_config now uses its own logger
+    if not config: # load_config would return None on file not found or major parse error
+        logger.error("Failed to load configuration for Maps API key.")
         return None
-    if not address:
-        print("Error: Address for geocoding is missing.")
+
+    api_key = config.get('api_keys', {}).get('google_maps')
+
+    if not api_key:
+        logger.error("Google Maps API key not found in configuration (api_keys.google_maps).")
+        return None
+    if api_key == API_KEY_PLACEHOLDER:
+        logger.error(f"Google Maps API key is still the placeholder value ('{API_KEY_PLACEHOLDER}'). Please update config.yaml.")
+        return None
+
+    logger.debug("Successfully retrieved Google Maps API key from configuration.")
+    return api_key
+
+def get_geocode(address: str) -> dict | None:
+    """
+    Geocodes an address string to latitude and longitude coordinates using Google Maps API.
+    The API key is automatically loaded from `config.yaml`.
+
+    Args:
+        address (str): The address string to geocode (e.g., "Rua Augusta, São Paulo, SP").
+
+    Returns:
+        dict | None: A dictionary with 'latitude' and 'longitude' keys if successful
+                     (e.g., {'latitude': -23.5505, 'longitude': -46.6333}),
+                     otherwise None. Logs errors or warnings on failure.
+    """
+    api_key = _get_maps_api_key()
+    if not api_key:
+        # _get_maps_api_key already logs detailed errors
+        return None
+
+    if not address or not isinstance(address, str) or not address.strip():
+        logger.error("Address for geocoding is missing or invalid.")
         return None
 
     gmaps = googlemaps.Client(key=api_key)
+    logger.debug(f"Attempting to geocode address: '{address}'")
 
     try:
-        print(f"Geocoding address: {address}")
         geocode_result = gmaps.geocode(address)
 
         if geocode_result and len(geocode_result) > 0:
             location = geocode_result[0]['geometry']['location']
-            print(f"Geocode successful for {address}: Lat {location['lat']}, Lng {location['lng']}")
+            logger.info(f"Geocode successful for '{address}': Lat {location['lat']}, Lng {location['lng']}")
             return {'latitude': location['lat'], 'longitude': location['lng']}
         else:
-            print(f"No results found for address: {address}")
+            logger.warning(f"No geocoding results found for address: {address}")
             return None
 
     except ApiError as e:
-        print(f"Google Maps API Error during geocoding for '{address}': {e}")
-    except HTTPError as e:
-        print(f"Google Maps HTTP Error during geocoding for '{address}': {e}")
+        logger.error(f"Google Maps API Error during geocoding for '{address}': {e}", exc_info=True)
+    except HTTPError as e: # Typically for 4xx/5xx HTTP status codes
+        logger.error(f"Google Maps HTTP Error during geocoding for '{address}': {e}", exc_info=True)
     except Timeout:
-        print(f"Google Maps API request timed out during geocoding for '{address}'.")
-    except TransportError as e: # Catches network-level issues
-        print(f"Google Maps Transport Error (network issue) during geocoding for '{address}': {e}")
+        logger.error(f"Google Maps API request timed out during geocoding for '{address}'.")
+    except TransportError as e: # Catches network-level issues like DNS failure, refused connection
+        logger.error(f"Google Maps Transport Error (network issue) during geocoding for '{address}': {e}", exc_info=True)
     except Exception as e: # Catch any other unexpected errors
-        print(f"An unexpected error occurred during geocoding for '{address}': {e}")
+        logger.error(f"An unexpected error occurred during geocoding for '{address}': {e}", exc_info=True)
 
     return None
 
-def get_place_details(api_key: str, place_id: str) -> dict | None:
+def get_place_details(place_id: str) -> dict | None:
     """
-    Retrieves detailed information for a place using its Google Maps Place ID.
+    Retrieves detailed information for a specific place using its Google Maps Place ID.
+    The API key is automatically loaded from `config.yaml`.
 
     Args:
-        api_key (str): Your Google Maps API key.
-        place_id (str): The Place ID string for the location.
+        place_id (str): The Place ID string for the location (e.g., "ChIJ0xR62sBfzpQR0g0yLNRAwNo").
 
     Returns:
-        dict | None: A dictionary containing place details if successful,
-                     otherwise None.
+        dict | None: A dictionary containing various place details (name, address, rating, etc.)
+                     if successful, otherwise None. Logs errors or warnings on failure.
     """
+    api_key = _get_maps_api_key()
     if not api_key:
-        print("Error: Google Maps API key is missing.")
+        # _get_maps_api_key already logs detailed errors
         return None
-    if not place_id:
-        print("Error: Place ID for details lookup is missing.")
+
+    if not place_id or not isinstance(place_id, str) or not place_id.strip():
+        logger.error("Place ID for details lookup is missing or invalid.")
         return None
 
     gmaps = googlemaps.Client(key=api_key)
@@ -84,81 +124,83 @@ def get_place_details(api_key: str, place_id: str) -> dict | None:
         'geometry', # For lat/lng
         'place_id' # Good to have for confirmation
     ]
+    logger.debug(f"Attempting to fetch place details for Place ID: '{place_id}' with fields: {fields}")
 
     try:
-        print(f"Fetching place details for Place ID: {place_id}")
         place_details_result = gmaps.place(place_id=place_id, fields=fields)
 
         if place_details_result and place_details_result.get('result'):
             details = place_details_result['result']
-            print(f"Successfully fetched details for {details.get('name', place_id)}")
+            logger.info(f"Successfully fetched place details for '{details.get('name', place_id)}' (ID: {place_id})")
             return details
         else:
-            print(f"No results found for Place ID: {place_id}. Response: {place_details_result}")
+            logger.warning(f"No place details found for Place ID: {place_id}. Response: {place_details_result}")
             return None
 
     except ApiError as e:
-        print(f"Google Maps API Error for Place ID '{place_id}': {e}")
+        logger.error(f"Google Maps API Error for Place ID '{place_id}': {e}", exc_info=True)
     except HTTPError as e:
-        print(f"Google Maps HTTP Error for Place ID '{place_id}': {e}")
+        logger.error(f"Google Maps HTTP Error for Place ID '{place_id}': {e}", exc_info=True)
     except Timeout:
-        print(f"Google Maps API request timed out for Place ID '{place_id}'.")
+        logger.error(f"Google Maps API request timed out for Place ID '{place_id}'.")
     except TransportError as e:
-        print(f"Google Maps Transport Error (network issue) for Place ID '{place_id}': {e}")
+        logger.error(f"Google Maps Transport Error (network issue) for Place ID '{place_id}': {e}", exc_info=True)
     except Exception as e:
-        print(f"An unexpected error occurred for Place ID '{place_id}': {e}")
+        logger.error(f"An unexpected error occurred for Place ID '{place_id}': {e}", exc_info=True)
 
     return None
 
 if __name__ == '__main__':
-    # This section is for basic testing.
-    # You'll need a valid Google Maps API key with Geocoding API and Places API enabled.
-    # Store it in your config.yaml or environment variable for actual use.
-    print("Testing Google Maps utilities...")
+    # This section is for basic testing of the maps utility functions.
+    # It relies on the API key being correctly configured in 'config.yaml'.
+    main_logger = get_logger(__name__)
+    main_logger.info("Testing Google Maps utilities (API key loaded from config.yaml)...")
 
-    # Replace with your actual API key for testing, or ensure it's loaded from a config.
-    # IMPORTANT: Do not commit your API key to version control.
-    TEST_API_KEY = None # Or "YOUR_TEST_API_KEY"
+    # Note: load_config() itself logs, so we don't need to print its direct output here.
+    _test_config = load_config()
+    _test_api_key = _test_config.get('api_keys', {}).get('google_maps') if _test_config else None
 
-    if TEST_API_KEY:
-        print("\n--- Testing get_geocode ---")
-        # Example address (MASP)
+    if _test_api_key and _test_api_key != API_KEY_PLACEHOLDER:
+        main_logger.info("--- Testing get_geocode (with key from config) ---")
         address1 = "Museu de Arte de São Paulo Assis Chateaubriand - MASP, Avenida Paulista, 1578, Bela Vista, São Paulo"
-        geocode1 = get_geocode(TEST_API_KEY, address1)
+        geocode1 = get_geocode(address1)
         if geocode1:
-            print(f"Geocode for '{address1}': {geocode1}")
+            main_logger.info(f"Geocode for '{address1}': {geocode1}")
 
-        address2 = "Invalid Address String For Testing Error"
-        geocode2 = get_geocode(TEST_API_KEY, address2) # Should ideally print 'No results' or handle error
+        address2 = "Invalid Address String For Testing Error From MapsPy"
+        geocode2 = get_geocode(address2)
         if not geocode2:
-            print(f"Geocoding for '{address2}' correctly returned None or failed as expected.")
+            main_logger.info(f"Geocoding for '{address2}' correctly returned None or failed as expected (logged by get_geocode).")
 
-        print("\n--- Testing get_place_details ---")
-        # Example Place ID (You can get this from a place search or geocoding result)
-        # MASP Place ID: ChIJ0xR62sBfzpQR0g0yLNRAwNo (Verify this if testing)
-        place_id_masp = "ChIJ0xR62sBfzpQR0g0yLNRAwNo"
-        details1 = get_place_details(TEST_API_KEY, place_id_masp)
+        main_logger.info("--- Testing get_place_details (with key from config) ---")
+        place_id_masp = "ChIJ0xR62sBfzpQR0g0yLNRAwNo" # MASP Place ID
+        details1 = get_place_details(place_id_masp)
         if details1:
-            print(f"Details for Place ID '{place_id_masp}':")
-            for key, value in details1.items():
-                if key == 'photos' and isinstance(value, list): # Avoid printing full photo data
-                    print(f"  {key}: [{len(value)} photos]")
-                elif key == 'opening_hours' and isinstance(value, dict):
-                    print(f"  {key}: {value.get('weekday_text', 'N/A')}")
-                else:
-                    print(f"  {key}: {value}")
+            main_logger.info(f"Details for Place ID '{place_id_masp}':")
+            # Print some details using main_logger for demonstration
+            main_logger.info(f"  Name: {details1.get('name')}")
+            main_logger.info(f"  Address: {details1.get('formatted_address')}")
+            main_logger.info(f"  Rating: {details1.get('rating', 'N/A')}")
+            if 'opening_hours' in details1 and isinstance(details1['opening_hours'], dict):
+                 main_logger.info(f"  Opening Hours (weekday_text): {details1['opening_hours'].get('weekday_text', 'N/A')}")
 
-        place_id_invalid = "InvalidPlaceIDForTestingError"
-        details2 = get_place_details(TEST_API_KEY, place_id_invalid)
+        place_id_invalid = "InvalidPlaceIDForTestingError123"
+        details2 = get_place_details(place_id_invalid) # Corrected: No API key argument
         if not details2:
-            print(f"Place details for '{place_id_invalid}' correctly returned None or failed as expected.")
-
+            main_logger.info(f"Place details for '{place_id_invalid}' correctly returned None or failed as expected (logged by get_place_details).")
     else:
-        print("\nSkipping live API tests as TEST_API_KEY is not set in maps.py.")
-        print("To run tests, set a valid Google Maps API key in the TEST_API_KEY variable in this script.")
-        print("Remember to enable Geocoding API and Places API in your Google Cloud Console project.")
-        # Example of expected output structure (if API key was present and calls successful)
-        print("\nExample expected output structure for get_geocode (if successful):")
-        print("{'latitude': -23.561375, 'longitude': -46.656134}")
-        print("\nExample expected output structure for get_place_details (if successful, partial):")
-        print("{'name': 'Museu de Arte de São Paulo Assis Chateaubriand', 'formatted_address': 'Av. Paulista, 1578 - Bela Vista, São Paulo - SP, 01310-200, Brazil', ...}")
+        main_logger.warning("Skipping live API tests for maps.py.")
+        if not _test_config:
+             main_logger.warning("Reason: Configuration could not be loaded (check utils.config logs).")
+        elif not _test_api_key:
+            main_logger.warning("Reason: Google Maps API key not found in config.yaml (api_keys.google_maps).")
+        elif _test_api_key == API_KEY_PLACEHOLDER:
+            main_logger.warning(f"Reason: Google Maps API key in config.yaml is still the placeholder value ('{API_KEY_PLACEHOLDER}').")
+        main_logger.info("To run live tests, set a valid Google Maps API key in config.yaml and ensure Geocoding & Places APIs are enabled.")
+
+        main_logger.info("Example expected output structure for get_geocode (if successful):")
+        main_logger.info("{'latitude': -23.561375, 'longitude': -46.656134}")
+        main_logger.info("Example expected output structure for get_place_details (if successful, partial):")
+        main_logger.info("{'name': 'Museu de Arte de São Paulo Assis Chateaubriand', 'formatted_address': 'Av. Paulista, 1578 - Bela Vista, São Paulo - SP, 01310-200, Brazil', ...}")
+
+```
