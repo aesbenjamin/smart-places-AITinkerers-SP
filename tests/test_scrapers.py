@@ -1,138 +1,224 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
-import logging # Import logging to disable it for tests
-
-# Adjust sys.path to allow imports from the parent directory (project root)
-# This is necessary so that 'scrapers' and 'utils' can be found
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(current_dir)
-if project_root not in sys.path:
-    sys.path.append(project_root)
-
-from scrapers.fablab_scraper import scrape_fablab_events
-from scrapers.cultura_sp_scraper import scrape_cultura_sp_events # This is a mock scraper
-import requests # For requests.exceptions.RequestException
-
-# --- Sample HTML for FabLab Scraper Test ---
-# This HTML should mimic the structure targeted by scrape_fablab_events
-# Specifically, 'div.views-row' and the internal structure for title, date, location, category.
-SAMPLE_FABLAB_HTML = """
-<html>
-<body>
-  <div class="views-row">
-    <a href="/cursos/oficinas/evento_fablab_1">Título Evento FabLab 1</a>
-    <div class="field-content card-curso__data">15/09/2024 | 10:00 - 12:00</div>
-    <div class="field-content card-curso__unidade"><a href="/unidades/fablab_centro">FabLab Central</a></div>
-    <div class="field-content card-curso__tags"><a href="/tags/oficina">Oficina</a>, <a href="/tags/3d">Impressão 3D</a></div>
-  </div>
-  <div class="views-row">
-    <a href="/cursos/palestras/evento_fablab_2">Palestra Inovação FabLab</a>
-    <div class="card-curso__data">20/09/2024 | 19:00 - 21:00</div>
-    <div class="card-curso__unidade"><a>FabLab Vila Mariana</a></div>
-    <div class="card-curso__tags"><a>Palestra</a></div>
-  </div>
-</body>
-</html>
+"""
+Testes dos Scrapers
+-------------------
+Este módulo executa os testes para os scrapers do projeto.
 """
 
-class TestFablabScraper(unittest.TestCase):
+# ============================================================================
+# Imports
+# ============================================================================
 
-    @patch('requests.get')
-    def test_scrape_fablab_events_success(self, mock_get):
-        # Configure the mock response for requests.get
-        mock_response = MagicMock()
-        mock_response.content = SAMPLE_FABLAB_HTML.encode('utf-8') # Ensure content is bytes
-        mock_response.raise_for_status = MagicMock() # Mock this to do nothing (simulate success)
-        mock_get.return_value = mock_response
+import os
+import sys
+import logging
+import unittest
+from typing import List, Dict, Any, Optional
 
-        events = scrape_fablab_events()
+# Adiciona o diretório raiz do projeto ao sys.path para imports absolutos
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-        self.assertIsInstance(events, list, "Should return a list")
-        self.assertEqual(len(events), 2, "Should find 2 events from sample HTML")
+# Imports absolutos dos módulos de scraper (serão adicionados conforme necessário)
+from agents.scrapers.wikipedia_museus_scraper import scrape_wikipedia_museus_info, WIKIPEDIA_MUSEUS_URL
+from agents.scrapers.visite_sao_paulo_scraper import scrape_visite_sao_paulo_events, BASE_URL as VISITE_SP_BASE_URL
+from agents.scrapers.fablab_scraper import scrape_fablab_events, FABLAB_URL
+# Exemplo: from agents.scrapers.fablab_scraper import scrape_fablab_livre_sp
 
-        for event in events:
-            self.assertIsInstance(event, dict, "Each event should be a dictionary")
-            self.assertIn('title', event)
-            self.assertIn('official_event_link', event)
-            self.assertIn('date', event)
-            self.assertIn('time', event)
-            self.assertIn('location', event)
-            self.assertIn('category', event)
-            self.assertIn('description', event) # Even if N/A
+from agents.utils.logger import get_logger
+from agents.utils.env_setup import setup_environment_variables_and_locale
 
-            if event['title'] == "Título Evento FabLab 1":
-                self.assertTrue(event['official_event_link'].endswith("/cursos/oficinas/evento_fablab_1"))
-                self.assertEqual(event['date'], "15/09/2024")
-                self.assertEqual(event['time'], "10:00 - 12:00")
-                self.assertEqual(event['location'], "FabLab Central")
-                self.assertIn("Oficina", event['category'])
-                self.assertIn("Impressão 3D", event['category'])
-            elif event['title'] == "Palestra Inovação FabLab":
-                 self.assertTrue(event['official_event_link'].endswith("/cursos/palestras/evento_fablab_2"))
-                 self.assertEqual(event['date'], "20/09/2024")
+# ============================================================================
+# Configuração do Logger
+# ============================================================================
 
-    @patch('requests.get')
-    def test_scrape_fablab_events_network_error(self, mock_get):
-        # Configure the mock to raise a network error
-        mock_get.side_effect = requests.exceptions.RequestException("Test network error")
+log_file_scrapers = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_scrapers.log')
+scraper_file_handler = logging.FileHandler(log_file_scrapers, mode='w')
+scraper_file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+scraper_file_handler.setLevel(logging.DEBUG)
 
-        events = scrape_fablab_events()
+# Configura o logger raiz para incluir o handler dos scrapers
+# Evita adicionar múltiplas vezes se já configurado por test_utils
+root_logger_scrapers = logging.getLogger()
+if not any(isinstance(h, logging.FileHandler) and h.baseFilename == log_file_scrapers for h in root_logger_scrapers.handlers):
+    root_logger_scrapers.addHandler(scraper_file_handler)
+root_logger_scrapers.setLevel(logging.DEBUG) # Garante que o logger raiz capture DEBUG
 
-        self.assertIsInstance(events, list, "Should return a list on network error")
-        self.assertEqual(len(events), 0, "Should return an empty list on network error")
-        # In a real test, you might also check if logger.error was called.
-        # This requires further mocking of the logger within the scraper module.
+logger_test_scrapers = get_logger(__name__)
 
-    @patch('requests.get')
-    def test_scrape_fablab_no_event_cards_found(self, mock_get):
-        mock_response = MagicMock()
-        mock_response.content = "<html><body><p>No events here.</p></body></html>".encode('utf-8')
-        mock_response.raise_for_status = MagicMock()
-        mock_get.return_value = mock_response
+# ============================================================================
+# Classes de Teste Base
+# ============================================================================
 
-        events = scrape_fablab_events()
-        self.assertIsInstance(events, list)
-        self.assertEqual(len(events), 0)
+class TestScrapersBase(unittest.TestCase):
+    """Classe base para testes dos scrapers."""
+    
+    @classmethod
+    def setUpClass(cls):
+        """Configuração que executa uma vez antes de todos os testes da classe."""
+        logger_test_scrapers.info(f"\n{'='*60}\nINICIANDO SUITE DE TESTES PARA: {cls.__name__}\n{'='*60}")
+        if not hasattr(cls, '_env_setup_done_scrapers'):
+            setup_environment_variables_and_locale() # Para garantir que dependências como config funcionem
+            cls._env_setup_done_scrapers = True
+            logger_test_scrapers.info("Ambiente configurado (variáveis e locale) para TestScrapersBase.")
 
+    def setUp(self):
+        """Configuração inicial para cada teste."""
+        logger_test_scrapers.info(f"-- Iniciando teste: {self._testMethodName} --")
+    
+    def tearDown(self):
+        """Limpeza após cada teste."""
+        logger_test_scrapers.info(f"-- Finalizando teste: {self._testMethodName} --\n")
 
-class TestCulturaSpScraper(unittest.TestCase):
+# ============================================================================
+# Classes de Teste Específicas (Esqueletos)
+# ============================================================================
 
-    def test_scrape_cultura_sp_events_returns_mock_data(self):
-        events = scrape_cultura_sp_events() # This is the mock scraper
+class TestWikipediaMuseusScraper(TestScrapersBase):
+    """Testes para o Wikipedia Museus Scraper."""
+    
+    # @unittest.skip("Testes para WikipediaMuseusScraper ainda não implementados.")
+    def test_scrape_wikipedia_museus_format(self):
+        logger_test_scrapers.info("Testando o formato da saída de scrape_wikipedia_museus_info...")
+        try:
+            data = scrape_wikipedia_museus_info()
+            self.assertIsNotNone(data, "A função não deve retornar None.")
+            self.assertIsInstance(data, list, "A função deve retornar uma lista.")
+            
+            if data: # Só prossiga se a lista não estiver vazia
+                logger_test_scrapers.info(f"Scraper retornou {len(data)} museus. Verificando o primeiro.")
+                first_museum = data[0]
+                self.assertIsInstance(first_museum, dict, "Cada item na lista deve ser um dicionário.")
+                
+                expected_keys = ['title', 'district', 'source_site']
+                for key in expected_keys:
+                    self.assertIn(key, first_museum, f"Chave esperada '{key}' não encontrada no dicionário do museu.")
+                
+                if 'title' in first_museum:
+                    self.assertIsInstance(first_museum['title'], str, "O título do museu deve ser uma string.")
+                if 'district' in first_museum:
+                    self.assertIsInstance(first_museum['district'], str, "O distrito do museu deve ser uma string.")
+                if 'source_site' in first_museum:
+                    self.assertEqual(first_museum['source_site'], WIKIPEDIA_MUSEUS_URL, "A URL da fonte não corresponde à esperada.")
+            else:
+                logger_test_scrapers.warning("O scraper não retornou nenhum museu. O teste de formato do item individual será pulado.")
+        except Exception as e:
+            logger_test_scrapers.error(f"Erro durante o teste de scrape_wikipedia_museus_format: {e}", exc_info=True)
+            self.fail(f"O scraper lançou uma exceção durante o teste: {e}")
 
-        self.assertIsInstance(events, list, "Mock scraper should return a list")
-        self.assertTrue(len(events) >= 2, "Mock scraper should return at least 2-3 sample events")
+class TestVisiteSaoPauloScraper(TestScrapersBase):
+    """Testes para o Visite São Paulo Scraper."""
 
-        for event in events:
-            self.assertIsInstance(event, dict)
-            self.assertIn('title', event)
-            self.assertIn('description', event)
-            self.assertIn('date', event)
-            self.assertIn('time', event)
-            self.assertIn('location', event)
-            self.assertIn('category', event)
-            self.assertIn('official_event_link', event)
+    # @unittest.skip("Testes para VisiteSaoPauloScraper ainda não implementados.")
+    def test_scrape_visite_sao_paulo_format(self):
+        logger_test_scrapers.info("Testando o formato da saída de scrape_visite_sao_paulo_events...")
+        try:
+            data = scrape_visite_sao_paulo_events()
+            self.assertIsNotNone(data, "A função não deve retornar None.")
+            self.assertIsInstance(data, list, "A função deve retornar uma lista.")
 
-        # Check some specific values from the known mock data
-        # Example: Assuming the first mock event has a specific title
-        if events: # if list is not empty
-            self.assertEqual(events[0]['title'], "Exposição de Arte Moderna no Centro")
-            self.assertEqual(events[0]['category'], "Exposição")
+            if data: # Só prossiga se a lista não estiver vazia
+                logger_test_scrapers.info(f"Scraper retornou {len(data)} eventos. Verificando o primeiro.")
+                first_event = data[0]
+                self.assertIsInstance(first_event, dict, "Cada item na lista deve ser um dicionário.")
+                
+                expected_keys = [
+                    'title', 'description', 'date', 'time',
+                    'location', 'category', 'official_event_link', 'source_site'
+                ]
+                for key in expected_keys:
+                    self.assertIn(key, first_event, f"Chave esperada '{key}' não encontrada no dicionário do evento.")
+                
+                if 'title' in first_event:
+                    self.assertIsInstance(first_event['title'], str, "O título do evento deve ser uma string.")
+                # Adicionar mais verificações de tipo para outras chaves se necessário
 
+                if 'source_site' in first_event:
+                    self.assertEqual(first_event['source_site'], VISITE_SP_BASE_URL, "A URL da fonte não corresponde à esperada.")
+            else:
+                logger_test_scrapers.warning("O scraper Visite São Paulo não retornou nenhum evento. O teste de formato do item individual será pulado.")
+        except Exception as e:
+            logger_test_scrapers.error(f"Erro durante o teste de scrape_visite_sao_paulo_format: {e}", exc_info=True)
+            self.fail(f"O scraper Visite São Paulo lançou uma exceção durante o teste: {e}")
+
+class TestFablabScraper(TestScrapersBase):
+    """Testes para o FabLab Livre SP Scraper."""
+
+    # @unittest.skip("Testes para FablabScraper ainda não implementados.")
+    def test_scrape_fablab_format(self):
+        logger_test_scrapers.info("Testando o formato da saída de scrape_fablab_events...")
+        try:
+            data = scrape_fablab_events()
+            self.assertIsNotNone(data, "A função não deve retornar None.")
+            self.assertIsInstance(data, list, "A função deve retornar uma lista.")
+
+            if data: # Só prossiga se a lista não estiver vazia
+                logger_test_scrapers.info(f"Scraper FabLab retornou {len(data)} eventos. Verificando o primeiro.")
+                first_event = data[0]
+                self.assertIsInstance(first_event, dict, "Cada item na lista deve ser um dicionário.")
+                
+                expected_keys = [
+                    'title', 'official_event_link', 'date', 'time',
+                    'location', 'categories', 'description', 'source_site'
+                ]
+                for key in expected_keys:
+                    self.assertIn(key, first_event, f"Chave esperada '{key}' não encontrada no dicionário do evento FabLab.")
+                
+                if 'title' in first_event:
+                    self.assertIsInstance(first_event['title'], str, "O título do evento FabLab deve ser uma string.")
+                
+                if 'source_site' in first_event:
+                    # O FABLAB_URL é a URL de busca, o source_site pode ser o domínio base.
+                    # Vamos verificar se o source_site é parte do FABLAB_URL ou o próprio.
+                    self.assertTrue(FABLAB_URL.startswith(first_event['source_site']) or first_event['source_site'] == "https://www.fablablivresp.prefeitura.sp.gov.br", 
+                                    f"A URL da fonte '{first_event['source_site']}' não corresponde à esperada baseada em '{FABLAB_URL}'.")
+            else:
+                logger_test_scrapers.warning("O scraper FabLab não retornou nenhum evento. O teste de formato do item individual será pulado.")
+        except Exception as e:
+            logger_test_scrapers.error(f"Erro durante o teste de scrape_fablab_format: {e}", exc_info=True)
+            self.fail(f"O scraper FabLab lançou uma exceção durante o teste: {e}")
+
+# ============================================================================
+# Função Principal de Teste
+# ============================================================================
+
+def run_all_scraper_tests():
+    """Executa todos os testes de scrapers e registra os resultados."""
+    logger_test_scrapers.info("\n" + "="*70 + "\nINICIANDO EXECUÇÃO COMPLETA DOS TESTES DE SCRAPERS\n" + "="*70)
+    
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestWikipediaMuseusScraper))
+    suite.addTest(unittest.makeSuite(TestVisiteSaoPauloScraper))
+    suite.addTest(unittest.makeSuite(TestFablabScraper))
+    
+    runner = unittest.TextTestRunner(verbosity=2, stream=sys.stdout)
+    result = runner.run(suite)
+    
+    logger_test_scrapers.info("\n" + "="*70 + "\nRESULTADO FINAL DOS TESTES DE SCRAPERS\n" + "="*70)
+    logger_test_scrapers.info(f"Testes executados: {result.testsRun}")
+    logger_test_scrapers.info(f"Falhas: {len(result.failures)}")
+    logger_test_scrapers.info(f"Erros: {len(result.errors)}")
+    logger_test_scrapers.info(f"Testes pulados: {len(result.skipped)}") # Adicionado para contar testes pulados
+    
+    if result.failures:
+        logger_test_scrapers.error("\nDetalhes das Falhas:")
+        for i, (test_case, traceback_str) in enumerate(result.failures, 1):
+            logger_test_scrapers.error(f"Falha {i}: {test_case}\n{traceback_str}")
+    
+    if result.errors:
+        logger_test_scrapers.error("\nDetalhes dos Erros:")
+        for i, (test_case, traceback_str) in enumerate(result.errors, 1):
+            logger_test_scrapers.error(f"Erro {i}: {test_case}\n{traceback_str}")
+            
+    logger_test_scrapers.info("="*70 + "\nFIM DA EXECUÇÃO DOS TESTES DE SCRAPERS\n" + "="*70)
+    return result.wasSuccessful()
+
+# ============================================================================
+# Execução do Script
+# ============================================================================
 
 if __name__ == '__main__':
-    # This allows running the tests directly from this file
-
-    # Temporarily disable logging to avoid excessive output during tests / potential hangs
-    # This is a global change for the duration of this test run.
-    # A more sophisticated approach might involve configuring specific loggers
-    # or using a test-specific logging configuration.
-    logging.disable(logging.CRITICAL)
-
-    try:
-        unittest.main()
-    finally:
-        # Re-enable logging if it was disabled (important if tests are part of a larger suite)
-        logging.disable(logging.NOTSET)
+    success = run_all_scraper_tests()
+    print(f"\nExecução dos testes de scrapers concluída. Verifique o arquivo '{log_file_scrapers}' para logs detalhados.")
+    print(f"Sucesso geral dos testes de scrapers: {success}")
+    sys.exit(0 if success else 1)

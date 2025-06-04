@@ -1,0 +1,43 @@
+2025-06-03 21:09:20,565 - __main__ - INFO - 
+======================================================================
+INICIANDO EXECUÇÃO COMPLETA DOS TESTES DE AGENTES
+======================================================================
+2025-06-03 21:09:20,565 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestAgentInitialization
+============================================================
+2025-06-03 21:09:20,565 - __main__ - INFO - Ambiente para TestAgentInitialization configurado.
+2025-06-03 21:09:20,565 - __main__ - INFO - -- Iniciando teste: test_root_agent_instantiated_correctly --
+2025-06-03 21:09:20,566 - __main__ - INFO - Testando a instanciação correta do root_agent...
+2025-06-03 21:09:20,566 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 21:09:20,566 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 21:09:20,566 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 21:09:20,566 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 21:09:20,566 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 21:09:20,566 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 21:09:20,567 - agents.cultural_agent - INFO - Instanciando Agente ADK com modelo: gemini-test-model
+2025-06-03 21:09:20,567 - __main__ - INFO - Teste de instanciação do root_agent concluído.
+2025-06-03 21:09:20,567 - __main__ - INFO - -- Finalizando teste: test_root_agent_instantiated_correctly --
+
+2025-06-03 21:09:20,567 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestWelcomeHelper
+============================================================
+2025-06-03 21:09:20,567 - __main__ - INFO - Ambiente para TestWelcomeHelper configurado.
+2025-06-03 21:09:20,567 - __main__ - INFO - -- Iniciando teste: test_get_welcome_message --
+2025-06-03 21:09:20,567 - __main__ - INFO - Testando WelcomeHelper.get_welcome_message...
+2025-06-03 21:09:20,567 - agents.cultural_agent - INFO - WelcomeHelper: Generating welcome message.
+2025-06-03 21:09:20,567 - __main__ - INFO - Teste de WelcomeHelper.get_welcome_message concluído.
+2025-06-03 21:09:20,567 - __main__ - INFO - -- Finalizando teste: test_get_welcome_message --
+
+2025-06-03 21:09:20,567 - __main__ - INFO - 
+======================================================================
+RESULTADO FINAL DOS TESTES DE AGENTES
+======================================================================
+2025-06-03 21:09:20,567 - __main__ - INFO - Testes executados: 2
+2025-06-03 21:09:20,567 - __main__ - INFO - Falhas: 0
+2025-06-03 21:09:20,567 - __main__ - INFO - Erros: 0
+2025-06-03 21:09:20,567 - __main__ - INFO - Testes pulados: 0
+2025-06-03 21:09:20,567 - __main__ - INFO - ======================================================================
+FIM DA EXECUÇÃO DOS TESTES DE AGENTES
+======================================================================

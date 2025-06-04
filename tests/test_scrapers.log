@@ -1,0 +1,79 @@
+2025-06-03 17:25:03,105 - __main__ - INFO - 
+======================================================================
+INICIANDO EXECUÇÃO COMPLETA DOS TESTES DE SCRAPERS
+======================================================================
+2025-06-03 17:25:03,105 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestWikipediaMuseusScraper
+============================================================
+2025-06-03 17:25:03,105 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:25:03,105 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:25:03,105 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:25:03,105 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:25:03,105 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:25:03,105 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:25:03,105 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestScrapersBase.
+2025-06-03 17:25:03,106 - __main__ - INFO - -- Iniciando teste: test_scrape_wikipedia_museus_format --
+2025-06-03 17:25:03,106 - __main__ - INFO - Testando o formato da saída de scrape_wikipedia_museus_info...
+2025-06-03 17:25:03,106 - agents.scrapers.wikipedia_museus_scraper - INFO - Iniciando extração de museus da Wikipédia: https://pt.wikipedia.org/wiki/Lista_de_museus_da_cidade_de_S%C3%A3o_Paulo
+2025-06-03 17:25:03,110 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): pt.wikipedia.org:443
+2025-06-03 17:25:03,201 - urllib3.connectionpool - DEBUG - https://pt.wikipedia.org:443 "GET /wiki/Lista_de_museus_da_cidade_de_S%C3%A3o_Paulo HTTP/1.1" 200 43364
+2025-06-03 17:25:03,225 - agents.scrapers.wikipedia_museus_scraper - INFO - Página de museus da Wikipédia obtida com sucesso.
+2025-06-03 17:25:03,285 - agents.scrapers.wikipedia_museus_scraper - INFO - Extração da Wikipédia finalizada. Encontrados 133 museus.
+2025-06-03 17:25:03,286 - __main__ - INFO - Scraper retornou 133 museus. Verificando o primeiro.
+2025-06-03 17:25:03,286 - __main__ - INFO - -- Finalizando teste: test_scrape_wikipedia_museus_format --
+
+2025-06-03 17:25:03,286 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestVisiteSaoPauloScraper
+============================================================
+2025-06-03 17:25:03,286 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:25:03,286 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:25:03,286 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:25:03,286 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:25:03,286 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:25:03,286 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:25:03,286 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestScrapersBase.
+2025-06-03 17:25:03,286 - __main__ - INFO - -- Iniciando teste: test_scrape_visite_sao_paulo_format --
+2025-06-03 17:25:03,286 - __main__ - INFO - Testando o formato da saída de scrape_visite_sao_paulo_events...
+2025-06-03 17:25:03,286 - agents.scrapers.visite_sao_paulo_scraper - INFO - Iniciando extração de eventos do Visite São Paulo da URL: https://visitesaopaulo.com/calendario-eventos/
+2025-06-03 17:25:03,287 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): visitesaopaulo.com:443
+2025-06-03 17:25:05,553 - urllib3.connectionpool - DEBUG - https://visitesaopaulo.com:443 "GET /calendario-eventos/ HTTP/1.1" 200 None
+2025-06-03 17:25:05,613 - agents.scrapers.visite_sao_paulo_scraper - INFO - URL acessada com sucesso: https://visitesaopaulo.com/calendario-eventos/
+2025-06-03 17:25:05,886 - agents.scrapers.visite_sao_paulo_scraper - INFO - Encontrados 911 possíveis títulos de eventos (h3).
+2025-06-03 17:25:07,882 - agents.scrapers.visite_sao_paulo_scraper - INFO - Extração do Visite São Paulo concluída. Encontrados 899 eventos.
+2025-06-03 17:25:07,882 - __main__ - INFO - Scraper retornou 899 eventos. Verificando o primeiro.
+2025-06-03 17:25:07,882 - __main__ - INFO - -- Finalizando teste: test_scrape_visite_sao_paulo_format --
+
+2025-06-03 17:25:07,882 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestFablabScraper
+============================================================
+2025-06-03 17:25:07,882 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:25:07,882 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:25:07,882 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:25:07,882 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:25:07,882 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:25:07,882 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:25:07,882 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestScrapersBase.
+2025-06-03 17:25:07,882 - __main__ - INFO - -- Iniciando teste: test_scrape_fablab_format --
+2025-06-03 17:25:07,882 - __main__ - INFO - Testando o formato da saída de scrape_fablab_events...
+2025-06-03 17:25:07,882 - agents.scrapers.fablab_scraper - INFO - Iniciando extração de eventos do FabLab da URL: https://www.fablablivresp.prefeitura.sp.gov.br/busca?tipo=curso
+2025-06-03 17:25:07,883 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): www.fablablivresp.prefeitura.sp.gov.br:443
+2025-06-03 17:25:09,217 - urllib3.connectionpool - DEBUG - https://www.fablablivresp.prefeitura.sp.gov.br:443 "GET /busca?tipo=curso HTTP/1.1" 200 None
+2025-06-03 17:25:09,388 - agents.scrapers.fablab_scraper - INFO - Encontrados 12 cards de eventos usando seletor 'div.views-row'.
+2025-06-03 17:25:09,400 - agents.scrapers.fablab_scraper - INFO - Extração do FabLab concluída. Encontrados 12 eventos.
+2025-06-03 17:25:09,401 - __main__ - INFO - Scraper FabLab retornou 12 eventos. Verificando o primeiro.
+2025-06-03 17:25:09,401 - __main__ - INFO - -- Finalizando teste: test_scrape_fablab_format --
+
+2025-06-03 17:25:09,401 - __main__ - INFO - 
+======================================================================
+RESULTADO FINAL DOS TESTES DE SCRAPERS
+======================================================================
+2025-06-03 17:25:09,401 - __main__ - INFO - Testes executados: 3
+2025-06-03 17:25:09,401 - __main__ - INFO - Falhas: 0
+2025-06-03 17:25:09,401 - __main__ - INFO - Erros: 0
+2025-06-03 17:25:09,401 - __main__ - INFO - Testes pulados: 0
+2025-06-03 17:25:09,401 - __main__ - INFO - ======================================================================
+FIM DA EXECUÇÃO DOS TESTES DE SCRAPERS
+======================================================================

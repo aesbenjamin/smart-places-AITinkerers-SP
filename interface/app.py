@@ -1,348 +1,324 @@
+"""
+Interface do Agente Cultural de São Paulo
+----------------------------------------
+Este módulo implementa a interface web do Agente Cultural usando Streamlit.
+Permite interação com o agente ADK para busca de eventos culturais e exibição
+dos resultados em um mapa interativo.
+"""
+
+# ============================================================================
+# Configuração do Ambiente e Imports
+# ============================================================================
+
 import streamlit as st
 import datetime
 import sys
 import os
+import requests
+import json
+import pandas as pd
 
-# Adjust Python path to include the root directory of the project
-# This allows imports from 'scrapers' and 'utils' modules.
+# Ajusta o Python path para incluir o diretório raiz do projeto
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 if project_root not in sys.path:
-    sys.path.append(project_root)
+    sys.path.insert(0, project_root)
 
-import pandas as pd # For st.map() DataFrame
-import datetime # Already imported but good to ensure it's here for date logic in dispatch
+# Imports locais
+from agents.utils.maps import geocode_events_list
+from agents.utils.logger import get_logger
 
-# Import scraper functions
-from scrapers.fablab_scraper import scrape_fablab_events
-from scrapers.cultura_sp_scraper import scrape_cultura_sp_events # This is currently a mock
-
-# Import ADK agent application and mock types (assuming they are in sys.path)
-from agents.cultural_agent import AgentApplication as MockAgentApplication # Rename to avoid conflict if real ADK was also imported
-from agents.cultural_agent import types as MockAgentTypes # For creating mock requests
-
-# Import logger
-from utils.logger import get_logger
+# Configuração do logger
 logger = get_logger(__name__)
 
+# ============================================================================
+# Configuração do Estado da Sessão
+# ============================================================================
 
-# --- Page Configuration (Optional but good practice) ---
+# Inicialização das variáveis de estado
+if "messages" not in st.session_state:
+    logger.debug("Initializing chat history in session_state.")
+    st.session_state.messages = [{
+        "role": "assistant",
+        "content": "Olá! Sou seu Agente Cultural. Como posso te ajudar a encontrar eventos em São Paulo?"
+    }]
+
+if "adk_session_id" not in st.session_state:
+    logger.debug("Initializing adk_session_id in session_state.")
+    st.session_state.adk_session_id = None
+
+if "current_events_found" not in st.session_state:
+    logger.debug("Initializing current_events_found in session_state.")
+    st.session_state.current_events_found = []
+
+# ============================================================================
+# Configuração da Interface
+# ============================================================================
+
+# Configuração da página
 st.set_page_config(
     page_title="Agente Cultural de São Paulo",
-    page_icon="🎭", # Example icon
+    page_icon="🎭",
     layout="wide"
 )
 
-# --- Main Application Title ---
+# Título e introdução
 st.title("🎭 Agente Cultural de São Paulo")
-st.markdown("Descubra eventos culturais, oficinas e exposições na cidade!")
+st.markdown("Use o chat abaixo para interagir com o agente e descobrir eventos culturais, oficinas e exposições na cidade!")
 
-# --- Sidebar for Filters ---
-st.sidebar.header("Filtros de Eventos")
+# Mensagem de boas-vindas
+st.markdown("""
+    **Bem-vindo!**
 
-# Placeholder filter widgets
-# Possible event categories - can be expanded or dynamically populated
-event_categories = ["Todos", "Oficina", "Música", "Exposição", "Teatro", "Dança", "Palestra", "Curso", "Feira", "Cinema", "Outro"]
-selected_event_category = st.sidebar.selectbox("Tipo de Evento (Categoria):", event_categories)
+    Esta interface permite que você converse com o Agente Cultural de São Paulo. 
+    Utilize a caixa de chat abaixo para fazer suas perguntas sobre:
+    - Tipos de eventos (shows, museus, exposições, etc.)
+    - Datas específicas ou períodos (hoje, amanhã, próximo fim de semana, DD/MM/YYYY)
+    - Localizações (bairros, pontos de referência, etc.)
 
-# Date filter: None means "Qualquer data"
-selected_date = st.sidebar.date_input("Data do Evento (deixe em branco para qualquer data):", value=None)
+    O agente tentará encontrar as melhores opções para você!
+""")
 
-# Location text query
-location_query_text = st.sidebar.text_input("Filtrar por Local (parte do nome/endereço):")
+# ============================================================================
+# Configuração do Layout
+# ============================================================================
 
-# Button to trigger filtering - useful if filtering is expensive, though Streamlit reruns on widget change
-# apply_filters_button = st.sidebar.button("Aplicar Filtros")
+# Divisão da tela em colunas (chat e mapa)
+chat_col, map_col = st.columns([2, 1])  # Chat ocupa 2/3, Mapa 1/3
 
-st.sidebar.markdown("---")
-st.sidebar.info("Desenvolvido como parte de um projeto de IA.")
+# ============================================================================
+# Configuração do ADK
+# ============================================================================
 
+# Endpoints do servidor ADK
+ADK_SESSION_URL = "http://localhost:8000/apps/agents/users/user/sessions"
+ADK_RUN_SSE_URL = "http://localhost:8000/run_sse"
 
-# --- Main Content Area ---
-
-# Placeholder for Map
-st.header("Mapa Interativo de Eventos")
-st.markdown("_(Visualização do mapa com eventos geolocalizados será implementada aqui.)_")
-# Example: Using st.map with no data or placeholder data
-# map_data_placeholder = None # Or pd.DataFrame({'lat': [-23.5505], 'lon': [-46.6333]})
-# st.map(map_data_placeholder)
-st.map() # Shows a default map of the world, good placeholder visually
-
-st.markdown("---")
-
-# Section to Load and Display Event Data
-st.header("Eventos Encontrados")
-
-# Load data from scrapers
-# This is a conceptual loading step. In a real app, this might be cached,
-# run on a schedule, or triggered by user actions if scraping is slow.
-@st.cache_data(ttl=3600) # Cache data for 1 hour
-def load_event_data_with_coords():
-    logger.info("Loading event data from scrapers...")
-    fablab_events_raw = scrape_fablab_events() # This scraper now uses logging
-    cultura_sp_events_mock_raw = scrape_cultura_sp_events() # This mock scraper also uses logging
-
-    processed_events = []
-
-    # Process FabLab Events (add None for lat/lon for now)
-    for event in fablab_events_raw:
-        event['latitude'] = None
-        event['longitude'] = None
-        processed_events.append(event)
-
-    # Process CulturaSP Mock Events (add mock lat/lon to some)
-    # MASP: -23.5614, -46.6563
-    # Centro Cultural SP: -23.5600, -46.6400 (approx)
-    # Teatro Oficina: -23.5522, -46.6420 (approx)
-    for i, event in enumerate(cultura_sp_events_mock_raw):
-        if i == 0: # "Exposição de Arte Moderna no Centro" (mock CCSP)
-            event['latitude'] = -23.5600
-            event['longitude'] = -46.6400
-        elif i == 1: # "Concerto da Orquestra Sinfônica Municipal" (mock Theatro Municipal)
-             # Approx Theatro Municipal: -23.5451, -46.6390
-            event['latitude'] = -23.5451
-            event['longitude'] = -46.6390
-        elif i == 2: # "Peça Teatral 'Crônicas da Cidade'" (mock Teatro Oficina)
-            event['latitude'] = -23.5522
-            event['longitude'] = -46.6420
-        else: # Default for any other mock events
-            event['latitude'] = None
-            event['longitude'] = None
-        processed_events.append(event)
-
-    logger.info(f"Loaded and processed {len(processed_events)} total events.")
-    return processed_events
-
-# Load data
-all_events = load_event_data_with_coords()
-logger.debug(f"Total events loaded after initial processing: {len(all_events)}")
-
-# --- Filtering Logic ---
-filtered_events = all_events
-
-# Filter by Event Category
-if selected_event_category != "Todos":
-    filtered_events = [event for event in filtered_events if event.get('category', '').lower() == selected_event_category.lower()]
-
-# Filter by Date
-if selected_date: # If a date is selected (not None)
-    filtered_events = [event for event in filtered_events if event.get('date') == selected_date.strftime("%Y-%m-%d") or event.get('date') == selected_date.strftime("%d/%m/%Y")]
-    # Fablab dates are DD/MM/YYYY, mock culturaSP are YYYY-MM-DD. Handle both.
-
-# Filter by Location Text Query (simple substring match on 'location' field)
-if location_query_text:
-    location_query_text_lower = location_query_text.lower()
-    filtered_events = [
-        event for event in filtered_events
-        if location_query_text_lower in event.get('location', '').lower()
-    ]
-
-# --- Display Filtered Events and Map ---
-
-# Prepare data for map (events with valid lat/lon)
-map_display_data = []
-for event in filtered_events:
-    if event.get('latitude') is not None and event.get('longitude') is not None:
-        map_display_data.append({
-            'lat': event['latitude'],
-            'lon': event['longitude'],
-            # Future: Add 'size' or 'color' based on event type or other criteria for st.map
-        })
-
-if map_display_data:
-    st.map(pd.DataFrame(map_display_data))
-else:
-    st.map() # Show default map if no geocoded events after filtering
-    st.caption("Nenhum evento filtrado com coordenadas para exibir no mapa.")
-
-
-st.markdown("---")
-st.header(f"Eventos Encontrados ({len(filtered_events)})")
-
-if filtered_events:
-    for event in filtered_events:
-        st.subheader(event.get('title', 'Título Indisponível'))
-
-        details = []
-        if event.get('date'): details.append(f"**Data:** {event.get('date')}")
-        if event.get('time'): details.append(f"**Hora:** {event.get('time')}")
-        details_str = " | ".join(details)
-        if details_str: st.markdown(details_str)
-
-        if event.get('location'): st.markdown(f"**Local:** {event.get('location')}")
-        if event.get('category'): st.markdown(f"**Categoria:** {event.get('category')}")
-
-        if event.get('description') and event.get('description') != "N/A (available on official event link)":
-            with st.expander("Descrição"):
-                st.markdown(event.get('description'))
-
-        if event.get('official_event_link') and event.get('official_event_link') != "N/A":
-            st.markdown(f"[Mais Detalhes]({event.get('official_event_link')})")
-        st.markdown("---")
-else:
-    st.info("Nenhum evento encontrado com os filtros atuais. Tente ampliar sua busca!")
-
-# Comments explaining the structure:
-# - Event data is loaded and mock coordinates are added.
-# - Filters for event type, date, and location query are applied.
-# - Filtered events with coordinates are shown on st.map.
-# - Filtered events are displayed as structured "cards".
-# - TODO: Implement actual geocoding for FabLab events.
-# - TODO: More sophisticated date filtering (ranges, today, etc.).
-# - TODO: More advanced location filtering (radius search after geocoding).
-
-
-# --- Chat Interface with Mock ADK Agent ---
-st.sidebar.markdown("---")
-st.sidebar.header("Chat com Agente Cultural")
-st.sidebar.caption("Interaja com o agente para buscar eventos.")
-
-# Initialize chat history in session state
-if "messages" not in st.session_state:
-    logger.debug("Initializing chat history in session_state.")
-    st.session_state.messages = [{"role": "assistant", "content": "Olá! Sou seu Agente Cultural. Pergunte-me sobre eventos em São Paulo."}]
-else:
-    logger.debug("Chat history already present in session_state.")
-
-
-# Display prior chat messages
-for message in st.session_state.messages:
-    with st.sidebar.chat_message(message["role"]):
-        st.sidebar.markdown(message["content"])
-
-# Instantiate the mock agent application
-# This could be cached or made a singleton in a more complex app
-@st.cache_resource
-def get_mock_agent_app():
-    logger.info("Initializing Mock AgentApplication instance for chat.")
-    # The cultural_agent.py script now uses logging for its mock setup.
-    return MockAgentApplication()
-
-agent_app = get_mock_agent_app()
-logger.debug("Mock AgentApplication instance obtained for chat.")
-
-# Simple intent dispatcher based on keywords
-def mock_intent_dispatch(user_query: str) -> tuple[str, dict]:
+def create_adk_session():
     """
-    Super simple keyword-based dispatcher for mock intent recognition.
-    Returns (intent_name, parameters_dict).
+    Cria ou recupera uma sessão ADK.
+    
+    Returns:
+        str: ID da sessão ADK ou None em caso de erro
     """
-    query_lower = user_query.lower()
-    params = {}
-
-    # Keywords for FindEventsNearLocation
-    if "perto de" in query_lower or "próximo a" in query_lower or "em" in query_lower and not ("tipo" in query_lower or "data" in query_lower):
-        intent = "FindEventsNearLocation"
-        # Simplistic location extraction - assumes location is after "perto de" or "em"
-        if "perto de" in query_lower:
-            parts = query_lower.split("perto de", 1)
-        elif "próximo a" in query_lower:
-            parts = query_lower.split("próximo a", 1)
-        else: # "em"
-            parts = query_lower.split("em", 1)
-
-        if len(parts) > 1:
-            location_str = parts[1].strip()
-            # Remove common follow-up questions for cleaner location
-            location_str = location_str.split("?")[0].split("hoje")[0].split("amanhã")[0].strip()
-            params['location'] = location_str
-        else: # Default if parsing fails but keyword was found
-            params['location'] = query_lower # Pass full query as location as a fallback
-        return intent, params
-
-    # Keywords for FindEventsByTypeDate
-    # This is very basic, a real NLU is needed for robust parsing.
-    # Example: "eventos de [tipo] em [data]" or "qual [tipo] para [data]"
-
-    # Try to find event type (from our predefined list)
-    event_categories_for_dispatch = [cat.lower() for cat in event_categories if cat != "Todos"]
-    found_category = None
-    for cat in event_categories_for_dispatch:
-        if cat in query_lower:
-            found_category = cat
-            params['eventType'] = found_category.capitalize() # Use original capitalization for handler
-            logger.debug(f"Dispatch: Found eventType keyword: {found_category}")
-            break
-
-    # Try to find a date (very simple YYYY-MM-DD or DD/MM/YYYY pattern or "hoje", "amanhã")
-    # This is extremely naive date parsing for mock purposes.
-    import re # Ensure re is imported if not already at top level of script
-    date_match_iso = re.search(r'\d{4}-\d{2}-\d{2}', query_lower)
-    date_match_br = re.search(r'\d{2}/\d{2}/\d{4}', query_lower)
-
-    if date_match_iso:
-        params['date'] = date_match_iso.group(0)
-        logger.debug(f"Dispatch: Found ISO date: {params['date']}")
-    elif date_match_br:
-        params['date'] = date_match_br.group(0) # Note: handler might need to parse this
-        logger.debug(f"Dispatch: Found BR date: {params['date']}")
-    elif "hoje" in query_lower:
-        params['date'] = datetime.date.today().strftime("%Y-%m-%d")
-        logger.debug(f"Dispatch: Found 'hoje', date set to: {params['date']}")
-    elif "amanhã" in query_lower:
-        params['date'] = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        logger.debug(f"Dispatch: Found 'amanhã', date set to: {params['date']}")
-
-    if params: # If we found any parameter for type/date
-        logger.info(f"Dispatch: Intent 'FindEventsByTypeDate' with params: {params}")
-        return "FindEventsByTypeDate", params
-
-    # Default fallback or welcome
-    if "olá" in query_lower or "oi" in query_lower or "bom dia" in query_lower:
-        logger.info("Dispatch: Intent 'welcome'")
-        return "welcome", {}
-
-    logger.info(f"Dispatch: Intent 'DefaultFallbackIntent' for query: '{user_query}'")
-    return "DefaultFallbackIntent", {'query': user_query} # Or a specific fallback handler
-
-# Chat input processing
-if prompt := st.sidebar.chat_input("Como posso te ajudar?"):
-    logger.info(f"User entered chat prompt: '{prompt}'")
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.sidebar.chat_message("user"):
-        st.sidebar.markdown(prompt)
-
-    with st.sidebar.chat_message("assistant"):
-        response_text = "Processando sua solicitação..."
-        placeholder = st.sidebar.empty()
-        placeholder.markdown(response_text + " ⏳")
-
+    if "adk_session_id" not in st.session_state or st.session_state.adk_session_id is None:
         try:
-            # 1. Determine intent and parameters (mocked)
-            intent_name, parameters = mock_intent_dispatch(prompt)
-            logger.info(f"Dispatched to intent='{intent_name}', params={parameters}")
+            logger.info(f"Criando nova sessão ADK em {ADK_SESSION_URL}")
+            session_payload = {"appName": "agents", "userId": "user"}
+            response = requests.post(ADK_SESSION_URL, json=session_payload, timeout=10)
+            response.raise_for_status()
+            session_data = response.json()
+            
+            if "id" in session_data:
+                st.session_state.adk_session_id = session_data["id"]
+                logger.info(f"ID da Sessão ADK: {st.session_state.adk_session_id}")
+                return st.session_state.adk_session_id
+            elif isinstance(session_data, list) and len(session_data) > 0 and "id" in session_data[0]:
+                st.session_state.adk_session_id = session_data[0]["id"]
+                logger.warning(f"Sessão ADK obtida de uma lista: {st.session_state.adk_session_id}")
+                return st.session_state.adk_session_id
+            else:
+                logger.error(f"Formato de resposta da sessão ADK inesperado: {session_data}")
+                st.session_state.adk_session_id = None
+                return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro ao criar/obter sessão ADK: {e}")
+            st.session_state.adk_session_id = None
+            return None
+    return st.session_state.adk_session_id
 
-            # 2. Create Mock AgentRequest
-            # Ensure the mock types are correctly used if agents.cultural_agent is also mocking them.
-            mock_request = MockAgentTypes.AgentRequest(
-                intent_display_name=intent_name,
-                parameters=parameters
-            )
+# ============================================================================
+# Interface do Chat
+# ============================================================================
 
-            # 3. Get and call the appropriate handler
-            handler_class = agent_app.handlers.get(intent_name)
+with chat_col:
+    st.header("Chat com Agente Cultural")
 
-            if handler_class:
-                handler_instance = handler_class(mock_request) # Pass the mock request
-                handler_instance.handle() # Call the handler's logic
-                agent_response_text = handler_instance.response.fulfillment_text
-            elif intent_name == "DefaultFallbackIntent":
-                 agent_response_text = f"Desculpe, não entendi bem o que você quis dizer com '{parameters.get('query')}'. Pode tentar de outra forma?"
-            else: # Should not happen if dispatch is comprehensive or has a welcome/fallback
-                agent_response_text = "Desculpe, não consegui processar sua solicitação no momento (handler não encontrado)."
+    # Exibe mensagens anteriores
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-            placeholder.markdown(agent_response_text) # Update placeholder with actual response
-            st.session_state.messages.append({"role": "assistant", "content": agent_response_text})
+    # Processamento do input do chat
+    if prompt := st.chat_input("Como posso te ajudar?"):
+        agent_response_text = "Processando sua solicitação... ⏳"
+        
+        logger.info(f"User entered chat prompt: '{prompt}'")
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.current_events_found = []
+        
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-        except Exception as e:
-            print(f"Error processing chat input with mock agent: {e}")
-            import traceback
-            traceback.print_exc()
-            error_message = "Ocorreu um erro ao processar sua solicitação com o agente."
-            placeholder.error(error_message)
-            st.session_state.messages.append({"role": "assistant", "content": error_message})
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            placeholder.markdown(agent_response_text)
+            
+            session_id = create_adk_session()
 
+            if not session_id:
+                agent_response_text = "Falha ao iniciar uma sessão com o agente. Tente recarregar a página."
+                st.session_state.current_events_found = []
+            else:
+                try:
+                    # Prepara o payload para o ADK
+                    payload = {
+                        "appName": "agents",
+                        "userId": "user",
+                        "sessionId": session_id,
+                        "newMessage": {
+                            "role": "user",
+                            "parts": [{"text": prompt}]
+                        },
+                        "streaming": False
+                    }
+                    
+                    logger.info(f"Enviando para o Agente ADK em {ADK_RUN_SSE_URL}")
+                    st.session_state.current_events_found = []
+                    st.session_state.error_message = None
+
+                    parsed_agent_chat_text_from_sse = None
+                    structured_response_data_from_tool = None
+
+                    # Processa a resposta do ADK
+                    try:
+                        with requests.post(ADK_RUN_SSE_URL, json=payload, stream=True, headers={'Accept': 'text/event-stream'}) as response:
+                            response.raise_for_status()
+                            logger.info(f"Resposta SSE recebida do Agente ADK. Content-Type: {response.headers.get('Content-Type')}")
+                            
+                            for line in response.iter_lines():
+                                if line:
+                                    decoded_line = line.decode('utf-8')
+                                    if decoded_line.startswith('data:'):
+                                        json_data_str = decoded_line[len('data:'):].strip()
+                                        try:
+                                            sse_event_data = json.loads(json_data_str)
+                                            content = sse_event_data.get("content")
+                                            if content and isinstance(content.get("parts"), list):
+                                                for part in content["parts"]:
+                                                    if "functionResponse" in part:
+                                                        function_response = part["functionResponse"]
+                                                        if function_response.get("name") == "find_cultural_events_unified":
+                                                            response_content = function_response.get("response")
+                                                            if isinstance(response_content, dict):
+                                                                structured_response_data_from_tool = response_content
+                                                    elif "text" in part:
+                                                        parsed_agent_chat_text_from_sse = part["text"]
+                                        except json.JSONDecodeError:
+                                            logger.warning(f"Falha ao decodificar JSON do evento SSE: {json_data_str}")
+                                        except Exception as e_inner_sse:
+                                            logger.error(f"Erro ao processar evento SSE: {e_inner_sse}")
+
+                    except requests.exceptions.RequestException as e_http:
+                        logger.error(f"Erro na requisição para o Agente ADK: {e_http}")
+                        st.session_state.error_message = f"Erro de comunicação com o Agente: {e_http}"
+                        agent_response_text = f"Erro de comunicação com o Agente. Verifique os logs e tente novamente."
+
+                except Exception as e_outer:
+                    logger.error(f"Erro geral no processamento do chat: {e_outer}", exc_info=True)
+                    st.session_state.error_message = f"Ocorreu um erro inesperado no sistema: {e_outer}"
+                    agent_response_text = "Ocorreu um erro inesperado ao processar sua solicitação."
+
+                # Processa a resposta final
+                if structured_response_data_from_tool:
+                    chat_summary = structured_response_data_from_tool.get("chat_summary")
+                    events_found = structured_response_data_from_tool.get("events_found", [])
+                    
+                    if chat_summary:
+                        agent_response_text = chat_summary
+                    elif parsed_agent_chat_text_from_sse:
+                        agent_response_text = parsed_agent_chat_text_from_sse
+                    elif not st.session_state.error_message:
+                        agent_response_text = "Recebi uma resposta da ferramenta, mas sem um resumo claro. Veja os eventos no mapa, se houver."
+                    
+                    if events_found:
+                        st.session_state.current_events_found = events_found
+                        logger.info(f"{len(events_found)} eventos estruturados armazenados.")
+                
+                elif parsed_agent_chat_text_from_sse:
+                    agent_response_text = parsed_agent_chat_text_from_sse
+                
+                elif st.session_state.error_message:
+                    agent_response_text = st.session_state.error_message
+                
+                elif agent_response_text == "Processando sua solicitação... ⏳":
+                    agent_response_text = "Não consegui obter uma resposta conclusiva do agente desta vez."
+
+                # Atualiza a interface com a resposta
+                placeholder.markdown(agent_response_text)
+                if agent_response_text.strip():
+                    if not st.session_state.messages or st.session_state.messages[-1]["content"] != agent_response_text:
+                        st.session_state.messages.append({"role": "assistant", "content": agent_response_text})
+
+                # Processa eventos para o mapa
+                if st.session_state.current_events_found:
+                    logger.info(f"Iniciando geocodificação de {len(st.session_state.current_events_found)} eventos.")
+                    st.session_state.current_events_found = geocode_events_list(st.session_state.current_events_found)
+                    logger.info(f"Geocodificação concluída. {sum(1 for ev in st.session_state.current_events_found if ev.get('latitude') is not None)} eventos com coordenadas.")
+
+    # Informação sobre o projeto
+    st.info("Desenvolvido como parte de um projeto de IA.")
+
+# ============================================================================
+# Interface do Mapa
+# ============================================================================
+
+with map_col:
+    st.header("Mapa de Eventos")
+    
+    if st.session_state.current_events_found:
+        events_with_coords = [
+            event for event in st.session_state.current_events_found 
+            if event.get('latitude') is not None and event.get('longitude') is not None
+        ]
+        
+        if events_with_coords:
+            logger.info(f"Exibindo mapa com {len(events_with_coords)} eventos geocodificados.")
+            map_df = pd.DataFrame(events_with_coords)
+            map_display_df = map_df[['latitude', 'longitude']].copy()
+            
+            # Coordenadas de São Paulo para centralização do mapa
+            sp_lat, sp_lon = -23.550520, -46.633308
+            avg_lat = map_df['latitude'].mean()
+            avg_lon = map_df['longitude'].mean()
+
+            st.map(map_display_df, latitude=avg_lat, longitude=avg_lon, zoom=11)
+            
+            # Lista detalhada dos eventos
+            st.subheader("Detalhes dos Eventos Encontrados:")
+            for event in events_with_coords:
+                name = event.get('name', 'Nome não disponível')
+                details_link = event.get('details_link')
+                date_info = event.get('date_info', 'Data não informada')
+                loc_details = event.get('location_details', 'Local não informado')
+                event_type = event.get('type', 'Tipo não informado')
+                full_description = event.get('full_description', 'Descrição não fornecida.')
+
+                st.markdown(f"**{name}**")
+                st.markdown(f"*Tipo:* {event_type} | *Data:* {date_info} | *Local:* {loc_details}")
+                if details_link and isinstance(details_link, str) and details_link.startswith("http"):
+                    st.markdown(f"[Mais Detalhes]({details_link})")
+                
+                with st.expander("Ver Descrição Completa"):
+                    st.markdown(full_description if full_description else "Descrição não disponível.")
+                st.divider()
+        else:
+            logger.info("Nenhum evento com coordenadas para exibir no mapa.")
+            st.info("Não foram encontrados eventos com localização precisa para exibir no mapa.")
+    else:
+        st.info("Busque por eventos para vê-los aqui no mapa!")
+
+# ============================================================================
+# Tratamento de Erros
+# ============================================================================
+
+if "error_message" in st.session_state and st.session_state.error_message:
+    st.error(st.session_state.error_message)
+
+# ============================================================================
+# Execução Local
+# ============================================================================
 
 if __name__ == '__main__':
-    print("To run the Streamlit application, use the command:")
-    print("streamlit run interface/app.py")
+    main_app_logger = get_logger(__name__)
+    main_app_logger.info("Interface Streamlit (app.py) executada diretamente. Para rodar com o servidor Streamlit: streamlit run interface/app.py")

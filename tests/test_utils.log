@@ -1,0 +1,175 @@
+2025-06-03 17:19:34,799 - __main__ - INFO - 
+======================================================================
+INICIANDO EXECUÇÃO COMPLETA DOS TESTES DE UTILS
+======================================================================
+2025-06-03 17:19:34,799 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestConfig
+============================================================
+2025-06-03 17:19:34,799 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:19:34,799 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,799 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,799 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:19:34,799 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:19:34,799 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:19:34,799 - __main__ - INFO - Ambiente configurado (variáveis e locale).
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Iniciando teste: test_get_api_key --
+2025-06-03 17:19:34,800 - __main__ - INFO - Testando get_api_key()...
+2025-06-03 17:19:34,800 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,800 - __main__ - INFO - Chave API para 'gemini' não encontrada ou é placeholder.
+2025-06-03 17:19:34,800 - agents.utils.config - WARNING - Chave de API para 'chave_inexistente_test' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,800 - __main__ - INFO - Teste para chave API inexistente passou.
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Finalizando teste: test_get_api_key --
+
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Iniciando teste: test_get_llm_setting --
+2025-06-03 17:19:34,800 - __main__ - INFO - Testando get_llm_setting()...
+2025-06-03 17:19:34,800 - __main__ - INFO - Configuração LLM 'model_name' obtida: gemini-2.0-flash
+2025-06-03 17:19:34,800 - __main__ - INFO - Teste para configuração LLM inexistente passou.
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Finalizando teste: test_get_llm_setting --
+
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Iniciando teste: test_load_config --
+2025-06-03 17:19:34,800 - __main__ - INFO - Testando load_config()...
+2025-06-03 17:19:34,800 - __main__ - INFO - Configuração carregada com sucesso. Chaves: ['api_keys', 'llm_settings']
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Finalizando teste: test_load_config --
+
+2025-06-03 17:19:34,800 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestDateUtils
+============================================================
+2025-06-03 17:19:34,800 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:19:34,800 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,800 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,800 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:19:34,800 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:19:34,800 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:19:34,800 - __main__ - INFO - Ambiente configurado (variáveis e locale).
+2025-06-03 17:19:34,800 - __main__ - INFO - -- Iniciando teste: test_parse_date --
+2025-06-03 17:19:34,800 - __main__ - INFO - Testando parse_date()...
+2025-06-03 17:19:34,802 - agents.utils.date_utils - WARNING - Não foi possível converter a data: data inválida
+2025-06-03 17:19:34,802 - __main__ - INFO - Testes de parse_date concluídos.
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Finalizando teste: test_parse_date --
+
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Iniciando teste: test_standardize_date_format --
+2025-06-03 17:19:34,802 - __main__ - INFO - Testando standardize_date_format()...
+2025-06-03 17:19:34,802 - __main__ - INFO - Testes de standardize_date_format concluídos.
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Finalizando teste: test_standardize_date_format --
+
+2025-06-03 17:19:34,802 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestEnvSetup
+============================================================
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:19:34,802 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,802 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:19:34,802 - __main__ - INFO - Ambiente configurado (variáveis e locale).
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Iniciando teste: test_load_llm_model_name_from_config --
+2025-06-03 17:19:34,802 - __main__ - INFO - Testando _load_llm_model_name_from_config()...
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Nome do modelo LLM carregado do config.yaml: gemini-2.0-flash
+2025-06-03 17:19:34,802 - __main__ - INFO - Nome do modelo LLM carregado/padrão: gemini-2.0-flash
+2025-06-03 17:19:34,802 - __main__ - INFO - Nome do modelo LLM carregado da configuração.
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Finalizando teste: test_load_llm_model_name_from_config --
+
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Iniciando teste: test_setup_environment_variables_and_locale --
+2025-06-03 17:19:34,802 - __main__ - INFO - Testando setup_environment_variables_and_locale() (indiretamente)...
+2025-06-03 17:19:34,802 - __main__ - INFO - setup_environment_variables_and_locale parece ter executado.
+2025-06-03 17:19:34,802 - __main__ - INFO - Locale LC_TIME atual: ('pt_BR', 'UTF-8')
+2025-06-03 17:19:34,802 - __main__ - INFO - -- Finalizando teste: test_setup_environment_variables_and_locale --
+
+2025-06-03 17:19:34,802 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestLogger
+============================================================
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:19:34,802 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,802 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:19:34,802 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:19:34,803 - __main__ - INFO - Ambiente configurado (variáveis e locale).
+2025-06-03 17:19:34,803 - __main__ - INFO - -- Iniciando teste: test_get_logger --
+2025-06-03 17:19:34,803 - __main__ - INFO - Testando get_logger()...
+2025-06-03 17:19:34,803 - __main__ - INFO - Instância de logger obtida: test_logger_instance
+2025-06-03 17:19:34,803 - __main__ - INFO - -- Finalizando teste: test_get_logger --
+
+2025-06-03 17:19:34,803 - __main__ - INFO - -- Iniciando teste: test_logger_cache --
+2025-06-03 17:19:34,803 - __main__ - INFO - Testando cache de get_logger()...
+2025-06-03 17:19:34,803 - __main__ - INFO - Cache de logger funcionando como esperado.
+2025-06-03 17:19:34,803 - __main__ - INFO - -- Finalizando teste: test_logger_cache --
+
+2025-06-03 17:19:34,803 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestMaps
+============================================================
+2025-06-03 17:19:34,803 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 17:19:34,803 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,803 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 17:19:34,803 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 17:19:34,803 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 17:19:34,803 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 17:19:34,803 - __main__ - INFO - Ambiente configurado (variáveis e locale).
+2025-06-03 17:19:34,803 - __main__ - INFO - -- Iniciando teste: test_geocode_events_list --
+2025-06-03 17:19:34,803 - __main__ - INFO - Testando geocode_events_list()...
+2025-06-03 17:19:34,804 - agents.utils.maps - INFO - geocode_events_list: Iniciando geocodificação para 3 eventos.
+2025-06-03 17:19:34,804 - googlemaps.client - INFO - API queries_quota: 60
+2025-06-03 17:19:34,808 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): maps.googleapis.com:443
+2025-06-03 17:19:35,078 - urllib3.connectionpool - DEBUG - https://maps.googleapis.com:443 "GET /maps/api/geocode/json?address=Av.+Paulista%2C+1578%2C+S%C3%A3o+Paulo%2C+SP&key=AIzaSyDqpeTsAxKttStr1qA4SOPJ1BmJIGTF1rE HTTP/1.1" 200 None
+2025-06-03 17:19:35,079 - agents.utils.maps - INFO - Geocodificação bem-sucedida para 'Av. Paulista, 1578, São Paulo, SP': Lat -23.5615771, Lng -46.65663989999999
+2025-06-03 17:19:35,080 - agents.utils.maps - INFO - Sucesso ao geocodificar 'Av. Paulista, 1578, São Paulo, SP': Lat -23.5615771, Lng -46.65663989999999
+2025-06-03 17:19:35,080 - agents.utils.maps - WARNING - Campo 'location_details' ausente, vazio ou inválido para o evento 'Evento sem local'. Pulando geocodificação.
+2025-06-03 17:19:35,081 - googlemaps.client - INFO - API queries_quota: 60
+2025-06-03 17:19:35,084 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): maps.googleapis.com:443
+2025-06-03 17:19:35,393 - urllib3.connectionpool - DEBUG - https://maps.googleapis.com:443 "GET /maps/api/geocode/json?address=__INVALID_ADDRESS__&key=AIzaSyDqpeTsAxKttStr1qA4SOPJ1BmJIGTF1rE HTTP/1.1" 200 None
+2025-06-03 17:19:35,395 - agents.utils.maps - WARNING - Nenhum resultado de geocodificação encontrado para o endereço: __INVALID_ADDRESS__
+2025-06-03 17:19:35,396 - agents.utils.maps - WARNING - Falha ao geocodificar '__INVALID_ADDRESS__' para o evento 'Evento local inválido'
+2025-06-03 17:19:35,396 - agents.utils.maps - INFO - geocode_events_list: Geocodificação concluída. 1 eventos geocodificados com sucesso.
+2025-06-03 17:19:35,396 - __main__ - INFO - Evento 'Evento MASP' geocodificado.
+2025-06-03 17:19:35,396 - __main__ - INFO - Testes de geocode_events_list concluídos.
+2025-06-03 17:19:35,396 - __main__ - INFO - -- Finalizando teste: test_geocode_events_list --
+
+2025-06-03 17:19:35,397 - __main__ - INFO - -- Iniciando teste: test_get_geocode --
+2025-06-03 17:19:35,397 - __main__ - INFO - Testando get_geocode()...
+2025-06-03 17:19:35,397 - googlemaps.client - INFO - API queries_quota: 60
+2025-06-03 17:19:35,400 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): maps.googleapis.com:443
+2025-06-03 17:19:35,625 - urllib3.connectionpool - DEBUG - https://maps.googleapis.com:443 "GET /maps/api/geocode/json?address=Av.+Paulista%2C+1578%2C+S%C3%A3o+Paulo%2C+SP&key=AIzaSyDqpeTsAxKttStr1qA4SOPJ1BmJIGTF1rE HTTP/1.1" 200 None
+2025-06-03 17:19:35,627 - agents.utils.maps - INFO - Geocodificação bem-sucedida para 'Av. Paulista, 1578, São Paulo, SP': Lat -23.5615771, Lng -46.65663989999999
+2025-06-03 17:19:35,628 - __main__ - INFO - Geocodificação para 'Av. Paulista, 1578, São Paulo, SP' bem-sucedida: {'latitude': -23.5615771, 'longitude': -46.65663989999999}
+2025-06-03 17:19:35,628 - __main__ - INFO - -- Finalizando teste: test_get_geocode --
+
+2025-06-03 17:19:35,629 - __main__ - INFO - -- Iniciando teste: test_get_place_details --
+2025-06-03 17:19:35,629 - __main__ - INFO - Testando get_place_details()...
+2025-06-03 17:19:35,629 - googlemaps.client - INFO - API queries_quota: 60
+2025-06-03 17:19:35,633 - urllib3.connectionpool - DEBUG - Starting new HTTPS connection (1): maps.googleapis.com:443
+2025-06-03 17:19:36,326 - urllib3.connectionpool - DEBUG - https://maps.googleapis.com:443 "GET /maps/api/place/details/json?fields=name%2Cformatted_address%2Crating%2Cphoto%2Copening_hours%2Cwebsite%2Cinternational_phone_number%2Cgeometry%2Cplace_id&placeid=ChIJ0xR62sBfzpQR0g0yLNRAwNo&reviews_sort=most_relevant&key=AIzaSyDqpeTsAxKttStr1qA4SOPJ1BmJIGTF1rE HTTP/1.1" 200 191
+2025-06-03 17:19:36,327 - agents.utils.maps - ERROR - Erro na API do Google Maps para ID 'ChIJ0xR62sBfzpQR0g0yLNRAwNo': NOT_FOUND (The provided Place ID is no longer valid. Please refresh cached Place IDs as per https://developers.google.com/places/web-service/place-id#save-id)
+Traceback (most recent call last):
+  File "/Users/tnobremasc/workspace/smart-places-children-and-teenagers-SP/agents/utils/maps.py", line 159, in get_place_details
+    place_details_result = gmaps.place(place_id=place_id, fields=fields)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/site-packages/googlemaps/client.py", line 445, in wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/site-packages/googlemaps/places.py", line 496, in place
+    return client._request("/maps/api/place/details/json", params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/site-packages/googlemaps/client.py", line 340, in _request
+    result = self._get_body(response)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/site-packages/googlemaps/client.py", line 369, in _get_body
+    raise googlemaps.exceptions.ApiError(api_status,
+googlemaps.exceptions.ApiError: NOT_FOUND (The provided Place ID is no longer valid. Please refresh cached Place IDs as per https://developers.google.com/places/web-service/place-id#save-id)
+2025-06-03 17:19:36,333 - __main__ - WARNING - Obtenção de detalhes para Place ID 'ChIJ0xR62sBfzpQR0g0yLNRAwNo' falhou ou retornou None. Verifique a chave da API ou o Place ID.
+2025-06-03 17:19:36,333 - __main__ - INFO - -- Finalizando teste: test_get_place_details --
+
+2025-06-03 17:19:36,333 - __main__ - INFO - 
+======================================================================
+RESULTADO FINAL DOS TESTES DE UTILS
+======================================================================
+2025-06-03 17:19:36,333 - __main__ - INFO - Testes executados: 12
+2025-06-03 17:19:36,334 - __main__ - INFO - Falhas: 0
+2025-06-03 17:19:36,334 - __main__ - INFO - Erros: 0
+2025-06-03 17:19:36,334 - __main__ - INFO - ======================================================================
+FIM DA EXECUÇÃO DOS TESTES DE UTILS
+======================================================================

@@ -1,244 +1,235 @@
-# agents/cultural_agent.py
+"""
+Agente Cultural de São Paulo (CulturalAgentSP)
+---------------------------------------------
+Este módulo implementa um agente especializado em eventos culturais, museus e atividades
+de lazer em São Paulo, utilizando o Google ADK (Agent Development Kit) e integrando
+diversas ferramentas de busca e processamento de dados.
+"""
 
-# This file defines the main cultural agent application using the Agent Development Kit (ADK).
-# It sets up intent handlers and registers them with the agent application.
+# ============================================================================
+# Imports e Configuração do Ambiente
+# ============================================================================
 
-# Assuming utils.logger is accessible, adjust path if necessary when running standalone
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.logger import get_logger
+import sys
+import os
+from datetime import datetime, timedelta
 
-logger = get_logger(__name__)
+from typing import Dict, Any, AsyncIterator
 
-# Note: The exact import paths for 'agent_application' and 'IntentHandler'
-# might vary based on the specific version or structure of the ADK provided.
-# This implementation is based on common patterns found in ADK examples like goo.gle/ice-cream-agent-code.
-try:
-    from agent_sdk import agent_application, IntentHandler, types
-    logger.info("Successfully imported agent_sdk.")
-except ImportError:
-    logger.warning("agent_sdk not found. Using mock objects for IntentHandler and agent_application.")
+# Imports relativos para módulos dentro do pacote 'agents'
+from .utils.logger import get_logger, current_session_id_var
+from .utils.env_setup import setup_environment_variables_and_locale, _load_llm_model_name_from_config
+from .prompts import get_global_instructions, get_agent_instruction
+from .tools.cultural_event_finder import find_cultural_events_unified
 
-    class MockAgentIntentInfo:
-        def __init__(self, display_name=""):
-            self.display_name = display_name
-            self.parameters = {}
+# Configura o ambiente (chaves API em os.environ e locale)
+setup_environment_variables_and_locale()
 
-    class MockAgentRequest:
-        def __init__(self, intent_display_name="", parameters=None):
-            self.intent_info = MockAgentIntentInfo(display_name=intent_display_name)
-            if parameters:
-                self.intent_info.parameters = {k: {'resolved_value': v} for k, v in parameters.items()}
+# Imports para o Google ADK
+from google.adk.agents import Agent
+from google.adk.tools import FunctionTool
 
-        def get_parameter(self, param_name):
-            param_data = self.intent_info.parameters.get(param_name)
-            return param_data.get('resolved_value') if param_data else None
+import google.generativeai as genai
 
-    class MockAgentResponse:
-        def __init__(self):
-            self.fulfillment_text = ""
-            self.session_state = {}
+ADK_AVAILABLE = True
+GEMINI_SDK_CONFIGURABLE = True
 
-    class types:
-        AgentRequest = MockAgentRequest
-        AgentResponse = MockAgentResponse
+# O logger principal do módulo é obtido sem session_id na inicialização do módulo.
+# Os loggers para interações específicas usarão o ContextVar.
+module_init_logger = get_logger(__name__)
 
-    class IntentHandler:
-        def __init__(self, request: types.AgentRequest):
-            self.request = request
-            self.response = types.AgentResponse()
+# ============================================================================
+# Constantes e Configurações
+# ============================================================================
 
-        def handle(self):
-            pass
+DEFAULT_ADK_LLM_MODEL_NAME = "gemini-1.5-flash-latest"
 
-    class AgentApplication:
-        def __init__(self):
-            self.handlers = {}
-            logger.info("Mock AgentApplication created.")
+# ============================================================================
+# Classe de Agente Personalizada para Lidar com Logs de Sessão
+# ============================================================================
 
-        def add_intent_handler(self, intent_name, handler_class):
-            self.handlers[intent_name] = handler_class
-            logger.info(f"Mock: Registered {handler_class.__name__} for intent '{intent_name}'")
+class CulturalAgentSPImpl(Agent):
+    """
+    Implementação personalizada do CulturalAgentSP que configura o logging de sessão
+    usando contextvars.
+    """
+    async def _run_async_impl(self, ctx: Any) -> AsyncIterator[Any]:
+        """
+        Sobrescreve o método base para definir o session_id no ContextVar antes
+        de executar a lógica do agente, e limpá-lo depois.
+        ctx virá do ADK e terá o session_id.
+        Event será o tipo de evento que o ADK espera ser retornado.
+        """
+        session_id_to_use = None
+        
+        # Prioridade 1: Tentar obter o ID da sessão da conversa (mais específico)
+        if hasattr(ctx, 'session') and hasattr(ctx.session, 'id') and ctx.session.id:
+            session_id_to_use = ctx.session.id
+            # module_init_logger.info(f"_run_async_impl: Usando ctx.session.id: {session_id_to_use}") # Log opcional para depuração
+        # Prioridade 2: Se não houver ctx.session.id, tentar ctx.user_id
+        elif hasattr(ctx, 'user_id') and ctx.user_id:
+            session_id_to_use = ctx.user_id
+            # module_init_logger.info(f"_run_async_impl: Usando ctx.user_id como fallback: {session_id_to_use}") # Log opcional para depuração
+        
+        if not session_id_to_use:
+            # Fallback final para um ID genérico se nenhum dos anteriores for encontrado ou for None/vazio
+            module_init_logger.warning(f"_run_async_impl: Nao foi possivel encontrar ctx.session.id nem ctx.user_id. Usando fallback para session_id.")
+            session_id_to_use = "unknown_session_id_adk_v013_fallback"
+        
+        session_id = str(session_id_to_use) # Garante que é uma string para o nome do arquivo e logs
 
-        def run(self, port=8080):
-            logger.info(f"Mock AgentApplication 'running' (handlers registered: {list(self.handlers.keys())})")
-
-# Define Intent Handlers:
-class WelcomeHandler(IntentHandler):
-    def handle(self):
-        logger.info("WelcomeHandler: Handling intent.")
-        self.response.fulfillment_text = "Bem-vindo ao Agente Cultural de São Paulo! Como posso ajudar?"
-        logger.debug(f"WelcomeHandler: Response set to: '{self.response.fulfillment_text}'")
-
-# --- Mock Event Data ---
-SHARED_MOCK_EVENTS = [
-    {'title': "Oficina de Impressão 3D no FabLab", 'description': "Aprenda a modelar e imprimir em 3D.", 'date': "2024-09-15", 'time': "14:00 - 17:00", 'location': "FabLab Centro, Av. Principal, 100", 'category': "Oficina", 'official_event_link': "http://example.com/fablab_event1"},
-    {'title': "Concerto de Jazz no Parque", 'description': "Show ao ar livre com bandas locais.", 'date': "2024-09-15", 'time': "18:00 - 20:00", 'location': "Parque da Cidade, Setor Sul", 'category': "Música", 'official_event_link': "http://example.com/music_event1"},
-    {'title': "Exposição Fotográfica 'Olhares Urbanos'", 'description': "Fotografias retratando a vida na cidade.", 'date': "2024-09-20", 'time': "10:00 - 19:00", 'location': "Galeria Municipal, Rua das Artes, 20", 'category': "Exposição", 'official_event_link': "http://example.com/expo_event1"},
-    {'title': "Peça Teatral 'O Sonho'", 'description': "Drama clássico em nova montagem.", 'date': "2024-09-15", 'time': "20:00 - 22:00", 'location': "Teatro Principal, Praça Central", 'category': "Teatro", 'official_event_link': "http://example.com/teatro_event1"},
-    {'title': "Curso de Pintura Aquarela", 'description': "Aulas para iniciantes e avançados.", 'date': "2024-09-20", 'time': "09:00 - 12:00", 'location': "Casa de Cultura Leste, Vila Esperança", 'category': "Curso", 'official_event_link': "http://example.com/curso_event1"},
-    {'title': "Festival de Cinema Independente", 'description': "Mostra de filmes independentes.", 'date': "2024-09-22", 'time': "13:00 - 23:00", 'location': "Cine Belas Artes, Rua Augusta, 300", 'category': "Cinema", 'official_event_link': "http://example.com/cinema_event1"},
-    {'title': "Feira de Artesanato da Vila Mariana", 'description': "Artesanato local e comidas típicas.", 'date': "2024-09-28", 'time': "10:00 - 17:00", 'location': "Praça da Vila Mariana", 'category': "Feira", 'official_event_link': "http://example.com/feira_vilamariana"},
-]
-
-class FindEventsHandler(IntentHandler):
-    def handle(self):
-        logger.info("FindEventsHandler: Handling intent.")
-        event_type_param = self.request.get_parameter('eventType')
-        date_param = self.request.get_parameter('date')
-        logger.info(f"FindEventsHandler: Extracted parameters: eventType='{event_type_param}', date='{date_param}'")
-
-        current_events = SHARED_MOCK_EVENTS
-        filtered_events = []
-        if not event_type_param and not date_param:
-            logger.info("FindEventsHandler: No specific filters provided by user. Placeholder: returning all mock events for now.")
-            filtered_events = current_events
-        else:
-            for event in current_events:
-                match_type = True
-                match_date = True
-                if event_type_param:
-                    if event_type_param.lower() not in event['category'].lower():
-                        match_type = False
-                if date_param:
-                    if date_param != event['date']:
-                        match_date = False
-                if match_type and match_date:
-                    filtered_events.append(event)
-
-        logger.info(f"FindEventsHandler: Found {len(filtered_events)} events after filtering.")
-
-        if filtered_events:
-            event_titles = [event['title'] for event in filtered_events]
-            response_text = f"Encontrei {len(filtered_events)} eventos"
-            if event_type_param:
-                response_text += f" do tipo '{event_type_param}'"
-            if date_param:
-                response_text += f" para a data {date_param}"
-            response_text += f": {'; '.join(event_titles)}."
-        else:
-            response_text = "Desculpe, não encontrei eventos"
-            if event_type_param:
-                response_text += f" do tipo '{event_type_param}'"
-            if date_param:
-                response_text += f" para a data {date_param}"
-            response_text += ". Gostaria de tentar outra busca?"
-        self.response.fulfillment_text = response_text
-        logger.debug(f"FindEventsHandler: Response set to: '{self.response.fulfillment_text}'")
-
-class FindEventsNearLocationHandler(IntentHandler):
-    def handle(self):
-        logger.info("FindEventsNearLocationHandler: Handling intent.")
-        location_query = self.request.get_parameter('location')
-        logger.info(f"FindEventsNearLocationHandler: Extracted location_query='{location_query}'")
-
-        if not location_query:
-            self.response.fulfillment_text = "Por favor, especifique um local para que eu possa encontrar eventos próximos."
-            logger.info(f"FindEventsNearLocationHandler: Response set to: '{self.response.fulfillment_text}' (no location provided)")
-            return
-
-        logger.info(f"FindEventsNearLocationHandler: Simulating geocoding for '{location_query}'.")
-        current_events = SHARED_MOCK_EVENTS
-        filtered_events = []
-        location_query_lower = location_query.lower()
-        for event in current_events:
-            if location_query_lower in event.get('location', '').lower():
-                filtered_events.append(event)
-
-        logger.info(f"FindEventsNearLocationHandler: Found {len(filtered_events)} events containing '{location_query}' in their location string.")
-
-        if filtered_events:
-            event_titles = [event['title'] for event in filtered_events]
-            response_text = f"Encontrei {len(filtered_events)} eventos perto de '{location_query}': {'; '.join(event_titles)}."
-        else:
-            response_text = f"Desculpe, não encontrei eventos perto de '{location_query}'. Gostaria de tentar outro local?"
-        self.response.fulfillment_text = response_text
-        logger.debug(f"FindEventsNearLocationHandler: Response set to: '{self.response.fulfillment_text}'")
-
-# Create the Agent Application instance
-ADK_SDK_AVAILABLE = 'agent_application' in globals()
-if ADK_SDK_AVAILABLE:
-    app = agent_application.AgentApplication()
-else:
-    app = AgentApplication()
-
-app.add_intent_handler("DefaultWelcomeIntent", WelcomeHandler)
-app.add_intent_handler("welcome", WelcomeHandler)
-app.add_intent_handler("FindEventsByTypeDate", FindEventsHandler)
-app.add_intent_handler("FindEventsNearLocation", FindEventsNearLocationHandler)
-
-if __name__ == '__main__':
-    logger.info("Cultural Agent Application - Main Block")
-    logger.info("This script defines the agent handlers and application.")
-
-    if (ADK_SDK_AVAILABLE and isinstance(app, agent_application.AgentApplication)) or \
-       (not ADK_SDK_AVAILABLE and isinstance(app, AgentApplication)):
-        logger.info("AgentApplication instantiated successfully.")
-        if hasattr(app, 'handlers'):
-             logger.info(f"Registered handlers: {app.handlers}")
-        elif hasattr(app, '_name_to_handler_map'):
-            logger.info(f"Registered handlers (from _name_to_handler_map): {app._name_to_handler_map}")
-
-    logger.info("--- Conceptual Handler Test ---")
-    if not ADK_SDK_AVAILABLE:
-        logger.info("Running conceptual test with MOCK request for 'FindEventsByTypeDate'...")
+        token = None
+        method_logger = None # Será inicializado após definir o ContextVar
         try:
-            mock_params_case1 = {'eventType': "Música", 'date': "2024-09-15"}
-            mock_request_case1 = types.AgentRequest(intent_display_name="FindEventsByTypeDate", parameters=mock_params_case1)
-            handler_class_case1 = app.handlers.get("FindEventsByTypeDate")
-            if handler_class_case1:
-                logger.info(f"Testing FindEventsByTypeDate with params: {mock_params_case1}")
-                handler_instance_case1 = handler_class_case1(mock_request_case1)
-                handler_instance_case1.handle()
-                logger.info(f"Response: {handler_instance_case1.response.fulfillment_text}")
+            if session_id and session_id.strip():
+                token = current_session_id_var.set(session_id)
+                method_logger = get_logger(__name__ + "._run_async_impl")
+                method_logger.info(f"ContextVar current_session_id_var definido para: {session_id}. Iniciando processamento do agente.")
+
+                # Registrar a entrada do usuário
+                if hasattr(ctx, 'user_content') and ctx.user_content and hasattr(ctx.user_content, 'parts'):
+                    user_input_texts = []
+                    for part in ctx.user_content.parts:
+                        if hasattr(part, 'text') and part.text:
+                            user_input_texts.append(part.text)
+                    if user_input_texts:
+                        full_user_input = " ".join(user_input_texts)
+                        method_logger.info(
+                            "Entrada do Usuário", 
+                            extra={"user_input": full_user_input, "agent_response": ""}
+                        )
             else:
-                logger.warning("Could not find handler for 'FindEventsByTypeDate'.")
+                module_init_logger.warning("_run_async_impl chamado sem session_id válido (ctx.session.id ou ctx.user_id podem estar ausentes ou vazios). Usando logger do módulo.")
+                method_logger = module_init_logger
+            
+            # Chama a implementação original do LlmAgent/Agent
+            async for event in super()._run_async_impl(ctx):
+                # Registrar a resposta do agente
+                if method_logger and hasattr(event, 'content') and event.content and hasattr(event.content, 'parts') and hasattr(event, 'author') and event.author == self.name:
+                    agent_response_texts = []
+                    for part in event.content.parts:
+                        if hasattr(part, 'text') and part.text:
+                            agent_response_texts.append(part.text)
+                        elif hasattr(part, 'function_call') and part.function_call: # ADK v0.1.3 usa function_call
+                            fc = part.function_call
+                            fc_name = getattr(fc, 'name', 'N/A')
+                            fc_args = getattr(fc, 'args', {})
+                            agent_response_texts.append(f"Chamada de função: {fc_name}(args={fc_args})")
+                        elif hasattr(part, 'functionCall') and part.functionCall: # Gemini SDK pode usar functionCall (maiúsculo C)
+                            fc = part.functionCall
+                            fc_name = getattr(fc, 'name', 'N/A')
+                            fc_args = getattr(fc, 'args', {})
+                            agent_response_texts.append(f"Chamada de função: {fc_name}(args={fc_args})")
+                            
+                    if agent_response_texts:
+                        full_agent_response = " ".join(agent_response_texts)
+                        method_logger.info(
+                            "Resposta do Agente", 
+                            extra={"user_input": "", "agent_response": full_agent_response}
+                        )
+                yield event
+            
+            if method_logger and session_id and session_id.strip():
+                method_logger.info(f"Processamento do agente concluído para sessão: {session_id}.")
 
-            mock_params_case2 = {'eventType': "Exposição"}
-            mock_request_case2 = types.AgentRequest(intent_display_name="FindEventsByTypeDate", parameters=mock_params_case2)
-            if handler_class_case1:
-                logger.info(f"Testing FindEventsByTypeDate with params: {mock_params_case2}")
-                handler_instance_case2 = handler_class_case1(mock_request_case2)
-                handler_instance_case2.handle()
-                logger.info(f"Response: {handler_instance_case2.response.fulfillment_text}")
-
-            mock_params_case3 = {'eventType': "Dança", 'date': "2024-01-01"}
-            mock_request_case3 = types.AgentRequest(intent_display_name="FindEventsByTypeDate", parameters=mock_params_case3)
-            if handler_class_case1:
-                logger.info(f"Testing FindEventsByTypeDate with params: {mock_params_case3} (expected no match)")
-                handler_instance_case3 = handler_class_case1(mock_request_case3)
-                handler_instance_case3.handle()
-                logger.info(f"Response: {handler_instance_case3.response.fulfillment_text}")
-
-            logger.info("--- Testing FindEventsNearLocationHandler ---")
-            handler_class_loc = app.handlers.get("FindEventsNearLocation")
-            if handler_class_loc:
-                mock_loc_params1 = {'location': "Vila Mariana"}
-                mock_loc_request1 = types.AgentRequest(intent_display_name="FindEventsNearLocation", parameters=mock_loc_params1)
-                logger.info(f"Testing FindEventsNearLocation with params: {mock_loc_params1}")
-                handler_loc_instance1 = handler_class_loc(mock_loc_request1)
-                handler_loc_instance1.handle()
-                logger.info(f"Response: {handler_loc_instance1.response.fulfillment_text}")
-
-                mock_loc_params2 = {'location': "Jardins"}
-                mock_loc_request2 = types.AgentRequest(intent_display_name="FindEventsNearLocation", parameters=mock_loc_params2)
-                logger.info(f"Testing FindEventsNearLocation with params: {mock_loc_params2} (expected no match)")
-                handler_loc_instance2 = handler_class_loc(mock_loc_request2)
-                handler_loc_instance2.handle()
-                logger.info(f"Response: {handler_loc_instance2.response.fulfillment_text}")
-
-                mock_loc_params3 = {}
-                mock_loc_request3 = types.AgentRequest(intent_display_name="FindEventsNearLocation", parameters=mock_loc_params3)
-                logger.info(f"Testing FindEventsNearLocation with params: {mock_loc_params3} (no location)")
-                handler_loc_instance3 = handler_class_loc(mock_loc_request3)
-                handler_loc_instance3.handle()
-                logger.info(f"Response: {handler_loc_instance3.response.fulfillment_text}")
-            else:
-                logger.warning("Could not find handler for 'FindEventsNearLocation'.")
         except Exception as e:
-            logger.error(f"Error during conceptual handler test: {e}", exc_info=True)
-            logger.warning("(This test might fail if SDK components are not fully available or are mocked differently)")
-    else:
-        logger.info("Skipping conceptual handler test because ADK_SDK_AVAILABLE is True (real SDK might be present).")
+            if method_logger: # Se o logger de método (com session_id) foi inicializado
+                method_logger.error(f"Erro durante super()._run_async_impl para sessão {session_id or 'DESCONHECIDA'}: {e}", exc_info=True)
+            else: # Fallback para o logger de inicialização do módulo
+                module_init_logger.error(f"Erro durante super()._run_async_impl para sessão {session_id or 'DESCONHECIDA'} (antes do logger da sessão ser configurado): {e}", exc_info=True)
+            raise # Re-levanta a exceção para que o ADK possa lidar com ela
+        finally:
+            if token is not None:
+                current_session_id_var.reset(token)
+                if method_logger: # Deve existir se token não for None
+                    method_logger.info(f"ContextVar current_session_id_var resetado para sessão: {session_id}.")
+            elif method_logger and session_id and session_id.strip(): # Caso o token não tenha sido definido mas o logger sim
+                method_logger.debug(f"Tentativa de reset de ContextVar para sessão {session_id}, mas o token não foi definido (session_id pode ter sido inválido inicialmente ou fallback).")
+            elif method_logger: # Se method_logger foi atribuído ao module_init_logger
+                method_logger.debug(f"ContextVar não foi definido (session_id inválido), nenhum reset necessário.")
 
-    logger.info("End of main block.")
+# ============================================================================
+# Inicialização do Agente
+# ============================================================================
+
+tool_instance = FunctionTool(func=find_cultural_events_unified)
+
+adk_model_name_to_use = _load_llm_model_name_from_config(DEFAULT_ADK_LLM_MODEL_NAME)
+module_init_logger.info(f"Instanciando Agente ADK ({CulturalAgentSPImpl.__name__}) com modelo: {adk_model_name_to_use}")
+
+# Agora instanciamos nossa classe personalizada
+root_agent = CulturalAgentSPImpl(
+    name="CulturalAgentSP",
+    description="Um assistente especializado em eventos culturais, museus e atividades de lazer na cidade de São Paulo.",
+    instruction=get_agent_instruction(),
+    tools=[tool_instance],
+    model=adk_model_name_to_use
+)
+
+# ============================================================================
+# Classe Auxiliar WelcomeHelper
+# ============================================================================
+
+class WelcomeHelper:
+    """Classe auxiliar para gerenciar mensagens de boas-vindas."""
+    def get_welcome_message(self) -> str:
+        module_init_logger.info("WelcomeHelper: Generating welcome message.")
+        return "Bem-vindo ao Agente Cultural de São Paulo! Como posso ajudar?"
+
+# ============================================================================
+# Bloco Principal de Execução (Testes Locais)
+# ============================================================================
+
+if __name__ == "__main__":
+
+    module_init_logger.info("Agente Cultural - Teste Local. Execute como 'python -m agents.cultural_agent' para imports relativos.")
+    
+    gemini_api_key_from_env = os.getenv("GOOGLE_API_KEY")
+    if gemini_api_key_from_env:
+        try:
+            genai.configure(api_key=gemini_api_key_from_env)
+            module_init_logger.info("SDK Gemini: GOOGLE_API_KEY configurada via os.environ.")
+        except Exception as e: 
+            module_init_logger.error(f"Falha ao genai.configure() no teste local: {e}")
+    else: 
+        module_init_logger.warning("SDK Gemini: GOOGLE_API_KEY não definida em os.environ.")
+
+    if not os.getenv("TAVILY_API_KEY"):
+        module_init_logger.warning("SDK Tavily: TAVILY_API_KEY não encontrada em os.environ.")
+    else: 
+        module_init_logger.info("SDK Tavily: TAVILY_API_KEY encontrada em os.environ.")
+
+    print(f"\n{WelcomeHelper().get_welcome_message()}\n")
+    print("\n--- Teste de Cenário: Crianças na Paulista (Fim de Semana) ---")
+    today = datetime.now()
+    saturday = today + timedelta((5 - today.weekday() + 7) % 7)
+    saturday_desc = f"próximo sábado ({saturday.strftime('%d/%m')})"
+    test_queries_main = [
+        {"event_type": "crianças", "date": saturday_desc, "location_query": "Paulista", "desc": f"Crianças Paulista {saturday_desc}"},
+    ]
+    for query_params in test_queries_main:
+        print(f"\nBuscando para '{query_params['desc']}':")
+        try:
+            result = find_cultural_events_unified(
+                event_type=query_params["event_type"],
+                date=query_params["date"],
+                location_query=query_params["location_query"]
+            )
+            print(f"Resultado ({query_params['desc']}):")
+            print(f"  Resposta: {result.get('response')}")
+            print(f"  Estado: {result.get('state_delta')}")
+            print(f"  Artefatos: {result.get('artifact_delta')}")
+            print(f"  Metadados de Uso: {result.get('usage_metadata')}")
+            print('-'*50)
+        except Exception as e:
+            module_init_logger.error(f"Erro no teste para '{query_params['desc']}': {e}", exc_info=True)
+            print(f"Erro ao processar query '{query_params['desc']}'. Verifique os logs.")
+    print("\n--- Fim dos Testes Locais ---")
+    if ADK_AVAILABLE: 
+        print("Para interagir com o agente ADK: execute 'adk web' ou 'adk run agents' no diretório raiz do projeto.")
+
+# ============================================================================
+# Exports
+# ============================================================================
+
+__all__ = ['root_agent']

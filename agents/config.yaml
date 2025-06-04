@@ -1,0 +1,25 @@
+# ============================================================================
+# Configuração de Chaves de API
+# ============================================================================
+
+api_keys:
+  # Chave da API do Google Maps para geocodificação e detalhes de lugares
+  google_maps: AIzaSyDqpeTsAxKttStr1qA4SOPJ1BmJIGTF1rE
+  
+  # Chave da API do Gemini para processamento de linguagem natural
+  gemini_api_key: AIzaSyBWLSOeKJZ1GzCacJIaVss7KkeuhDMfmMw
+  
+  # Chave da API do Tavily para busca na web
+  tavily_api_key: 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
+
+# ============================================================================
+# Configurações do Modelo de Linguagem (LLM)
+# ============================================================================
+
+llm_settings:
+  # Modelo a ser usado pela ferramenta get_user_response.py e pelo Agente ADK principal
+  # Opções recomendadas:
+  # - gemini-1.5-flash-latest: Mais rápido, bom para respostas curtas
+  # - gemini-1.0-pro-latest: Mais preciso, melhor para análises complexas
+  # - gemini-2.0-flash: Versão mais recente, balanceia velocidade e precisão
+  model_name: gemini-2.0-flash

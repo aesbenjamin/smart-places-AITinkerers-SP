@@ -5,3 +5,8 @@ googlemaps
 google-cloud-aiplatform
 python-dotenv
 playwright
+google-adk>=0.1.0
+tavily-python
+google-generativeai
+pandas
+PyYAML

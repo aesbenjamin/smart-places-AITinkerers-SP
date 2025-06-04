@@ -1,0 +1,211 @@
+2025-06-03 19:19:54,601 - __main__ - INFO - 
+======================================================================
+INICIANDO EXECUÇÃO COMPLETA DOS TESTES DE FERRAMENTAS
+======================================================================
+2025-06-03 19:19:54,602 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestCulturalEventFinder
+============================================================
+2025-06-03 19:19:54,602 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 19:19:54,602 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,602 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,602 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 19:19:54,602 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 19:19:54,602 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 19:19:54,602 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestToolsBase.
+2025-06-03 19:19:54,602 - __main__ - INFO - -- Iniciando teste: test_find_cultural_events_basic_flow_and_format --
+2025-06-03 19:19:54,603 - __main__ - INFO - Testando o fluxo básico e formato de find_cultural_events_unified...
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Cultural Event Finder: find_cultural_events_unified invocada com: tipo='exposição', data='amanhã', local='Paulista'
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Expandindo termos de localização para: 'Paulista'
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Termos de localização expandidos de 'Paulista' para ['paulista', 'avenida paulista'].
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Coletando todos os eventos e informações de museus (via data_aggregator)...
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Total de 1 itens carregados via data_aggregator.
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Realizando busca na web com Tavily. Query: 'Eventos culturais ou atividades exposição em Paulista em amanhã em São Paulo'
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Busca na web retornou 1 resultados.
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Delegando a geração da resposta final para o LLM...
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Anexando descrições completas aos eventos selecionados pelo LLM...
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Descrições completas anexadas a 2 eventos.
+2025-06-03 19:19:54,603 - agents.tools.cultural_event_finder - INFO - Resposta estruturada final: {'chat_summary': 'Aqui estão alguns eventos...', 'events_found': [{'id': 'scraper_1', 'title': 'Expo Scraper (LLM)', 'source': 'scraper', 'full_description': 'Detalhes da Expo Scraper'}, {'id': 'web_event_1_url', 'title': 'Show Web (LLM)', 'source': 'web', 'full_description': 'Conteúdo do Show Web'}...
+2025-06-03 19:19:54,604 - __main__ - INFO - Teste de find_cultural_events_unified concluído.
+2025-06-03 19:19:54,604 - __main__ - INFO - -- Finalizando teste: test_find_cultural_events_basic_flow_and_format --
+
+2025-06-03 19:19:54,604 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestSearchWeb
+============================================================
+2025-06-03 19:19:54,604 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 19:19:54,604 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,604 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,605 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 19:19:54,605 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 19:19:54,605 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 19:19:54,605 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestToolsBase.
+2025-06-03 19:19:54,605 - __main__ - INFO - -- Iniciando teste: test_search_tavily_api_exception --
+2025-06-03 19:19:54,606 - __main__ - INFO - Testando search_tavily com exceção da API...
+2025-06-03 19:19:54,606 - agents.tools.search_web - ERROR - Erro durante a busca com Tavily para a query 'eventos hoje': Erro na API Tavily
+2025-06-03 19:19:54,606 - __main__ - INFO - Teste search_tavily com exceção da API concluído.
+2025-06-03 19:19:54,606 - __main__ - INFO - -- Finalizando teste: test_search_tavily_api_exception --
+
+2025-06-03 19:19:54,606 - __main__ - INFO - -- Iniciando teste: test_search_tavily_no_api_key --
+2025-06-03 19:19:54,606 - __main__ - INFO - Testando search_tavily sem chave API...
+2025-06-03 19:19:54,606 - agents.tools.search_web - WARNING - Chave da API Tavily não fornecida. Busca não realizada.
+2025-06-03 19:19:54,606 - __main__ - INFO - Teste search_tavily sem chave API concluído.
+2025-06-03 19:19:54,606 - __main__ - INFO - -- Finalizando teste: test_search_tavily_no_api_key --
+
+2025-06-03 19:19:54,606 - __main__ - INFO - -- Iniciando teste: test_search_tavily_success --
+2025-06-03 19:19:54,606 - __main__ - INFO - Testando search_tavily com sucesso...
+2025-06-03 19:19:54,607 - agents.tools.search_web - INFO - Busca Tavily realizada com sucesso para query: 'melhores museus SP'
+2025-06-03 19:19:54,607 - __main__ - INFO - Teste search_tavily com sucesso concluído.
+2025-06-03 19:19:54,607 - __main__ - INFO - -- Finalizando teste: test_search_tavily_success --
+
+2025-06-03 19:19:54,607 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestGetUserResponse
+============================================================
+2025-06-03 19:19:54,607 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 19:19:54,607 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,607 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,607 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 19:19:54,607 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 19:19:54,607 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 19:19:54,607 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestToolsBase.
+2025-06-03 19:19:54,607 - __main__ - INFO - -- Iniciando teste: test_generate_response_llm_candidate_call_raises_exception --
+2025-06-03 19:19:54,607 - __main__ - INFO - Testando generate_response_from_llm com exceção na chamada de candidatos ao LLM...
+2025-06-03 19:19:54,607 - agents.tools.get_user_response - ERROR - Erro crítico ao gerar/processar resposta do LLM: Erro de API do LLM
+2025-06-03 19:19:54,608 - __main__ - INFO - Teste generate_response_from_llm com exceção na API para candidatos concluído.
+2025-06-03 19:19:54,608 - __main__ - INFO - -- Finalizando teste: test_generate_response_llm_candidate_call_raises_exception --
+
+2025-06-03 19:19:54,608 - __main__ - INFO - -- Iniciando teste: test_generate_response_llm_returns_invalid_json --
+2025-06-03 19:19:54,608 - __main__ - INFO - Testando generate_response_from_llm com JSON inválido do LLM...
+2025-06-03 19:19:54,608 - agents.tools.get_user_response - ERROR - Falha ao decodificar JSON da resposta do LLM: Expecting value: line 1 column 1 (char 0). Resposta bruta recebida: 'Isto não é um JSON.'
+2025-06-03 19:19:54,608 - __main__ - INFO - Teste generate_response_from_llm com JSON inválido concluído.
+2025-06-03 19:19:54,608 - __main__ - INFO - -- Finalizando teste: test_generate_response_llm_returns_invalid_json --
+
+2025-06-03 19:19:54,608 - __main__ - INFO - -- Iniciando teste: test_generate_response_llm_returns_json_missing_candidates_key --
+2025-06-03 19:19:54,609 - __main__ - INFO - Testando generate_response_from_llm com JSON do LLM sem a chave 'event_candidates'...
+2025-06-03 19:19:54,609 - agents.tools.get_user_response - ERROR - Estrutura JSON da resposta do LLM é inválida ou não contém 'event_candidates' como uma lista. Resposta: {'outra_chave': []}
+2025-06-03 19:19:54,609 - __main__ - INFO - Teste generate_response_from_llm com JSON malformado concluído.
+2025-06-03 19:19:54,609 - __main__ - INFO - -- Finalizando teste: test_generate_response_llm_returns_json_missing_candidates_key --
+
+2025-06-03 19:19:54,609 - __main__ - INFO - -- Iniciando teste: test_generate_response_llm_returns_no_candidates --
+2025-06-03 19:19:54,609 - __main__ - INFO - Testando generate_response_from_llm quando LLM não encontra candidatos...
+2025-06-03 19:19:54,610 - agents.tools.get_user_response - INFO - LLM retornou 0 candidatos a eventos válidos.
+2025-06-03 19:19:54,610 - __main__ - INFO - Teste generate_response_from_llm sem candidatos concluído.
+2025-06-03 19:19:54,610 - __main__ - INFO - -- Finalizando teste: test_generate_response_llm_returns_no_candidates --
+
+2025-06-03 19:19:54,610 - __main__ - INFO - -- Iniciando teste: test_generate_response_success --
+2025-06-03 19:19:54,610 - __main__ - INFO - Testando generate_response_from_llm com sucesso...
+2025-06-03 19:19:54,610 - agents.tools.get_user_response - INFO - LLM retornou 2 candidatos a eventos válidos.
+2025-06-03 19:19:54,611 - __main__ - INFO - Teste generate_response_from_llm com sucesso concluído.
+2025-06-03 19:19:54,611 - __main__ - INFO - -- Finalizando teste: test_generate_response_success --
+
+2025-06-03 19:19:54,611 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestGetBairros
+============================================================
+2025-06-03 19:19:54,611 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 19:19:54,611 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,611 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,611 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 19:19:54,611 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 19:19:54,611 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 19:19:54,611 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestToolsBase.
+2025-06-03 19:19:54,611 - __main__ - INFO - -- Iniciando teste: test_get_expanded_terms_empty_query --
+2025-06-03 19:19:54,611 - __main__ - INFO - Testando get_expanded_location_terms com query vazia...
+2025-06-03 19:19:54,611 - __main__ - INFO - Teste com query vazia concluído.
+2025-06-03 19:19:54,611 - __main__ - INFO - -- Finalizando teste: test_get_expanded_terms_empty_query --
+
+2025-06-03 19:19:54,611 - __main__ - INFO - -- Iniciando teste: test_get_expanded_terms_llm_api_exception --
+2025-06-03 19:19:54,612 - __main__ - INFO - Testando get_expanded_location_terms com exceção na API do LLM...
+2025-06-03 19:19:54,614 - agents.tools.get_bairros - WARNING - Erro durante a chamada ao LLM para 'Ibirapuera': Erro de API LLM Simulada
+2025-06-03 19:19:54,614 - __main__ - INFO - Teste com exceção na API do LLM concluído.
+2025-06-03 19:19:54,615 - __main__ - INFO - -- Finalizando teste: test_get_expanded_terms_llm_api_exception --
+
+2025-06-03 19:19:54,615 - __main__ - INFO - -- Iniciando teste: test_get_expanded_terms_llm_disabled --
+2025-06-03 19:19:54,619 - __main__ - INFO - Testando get_expanded_location_terms com LLM desabilitado...
+2025-06-03 19:19:54,620 - __main__ - INFO - Teste com LLM desabilitado concluído.
+2025-06-03 19:19:54,620 - __main__ - INFO - -- Finalizando teste: test_get_expanded_terms_llm_disabled --
+
+2025-06-03 19:19:54,620 - __main__ - INFO - -- Iniciando teste: test_get_expanded_terms_llm_malformed_response --
+2025-06-03 19:19:54,620 - __main__ - INFO - Testando get_expanded_location_terms com resposta malformada do LLM...
+2025-06-03 19:19:54,621 - agents.tools.get_bairros - WARNING - Falha ao decodificar resposta do LLM para 'Centro': isto não é json nem lista python
+2025-06-03 19:19:54,621 - __main__ - INFO - Teste com resposta malformada do LLM concluído.
+2025-06-03 19:19:54,622 - __main__ - INFO - -- Finalizando teste: test_get_expanded_terms_llm_malformed_response --
+
+2025-06-03 19:19:54,622 - __main__ - INFO - -- Iniciando teste: test_get_expanded_terms_llm_success --
+2025-06-03 19:19:54,623 - __main__ - INFO - Testando get_expanded_location_terms com LLM habilitado e sucesso...
+2025-06-03 19:19:54,624 - __main__ - INFO - Teste com LLM habilitado e sucesso concluído.
+2025-06-03 19:19:54,624 - __main__ - INFO - -- Finalizando teste: test_get_expanded_terms_llm_success --
+
+2025-06-03 19:19:54,625 - __main__ - INFO - 
+============================================================
+INICIANDO SUITE DE TESTES PARA: TestDataAggregator
+============================================================
+2025-06-03 19:19:54,625 - agents.utils.env_setup - INFO - Iniciando configuração de variáveis de ambiente e locale...
+2025-06-03 19:19:54,625 - agents.utils.config - WARNING - Chave de API para 'gemini' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,625 - agents.utils.config - WARNING - Chave de API para 'tavily' não encontrada no arquivo de configuração.
+2025-06-03 19:19:54,625 - agents.utils.env_setup - INFO - GOOGLE_MAPS_API_KEY definida em os.environ a partir do config.yaml.
+2025-06-03 19:19:54,625 - agents.utils.env_setup - INFO - Locale LC_TIME definido para pt_BR.UTF-8.
+2025-06-03 19:19:54,625 - agents.utils.env_setup - INFO - Configuração de ambiente finalizada.
+2025-06-03 19:19:54,626 - __main__ - INFO - Ambiente configurado (variáveis e locale) para TestToolsBase.
+2025-06-03 19:19:54,626 - __main__ - INFO - -- Iniciando teste: test_cache_hit_uses_memory --
+2025-06-03 19:19:54,627 - __main__ - INFO - Testando DataAggregator: cache hit...
+2025-06-03 19:19:54,630 - agents.tools.data_aggregator - INFO - Data Aggregator: Usando dados de scrapers da memória (ainda válidos).
+2025-06-03 19:19:54,631 - __main__ - INFO - Teste DataAggregator: cache hit concluído.
+2025-06-03 19:19:54,631 - __main__ - INFO - -- Finalizando teste: test_cache_hit_uses_memory --
+
+2025-06-03 19:19:54,631 - __main__ - INFO - -- Iniciando teste: test_cache_miss_calls_scrapers_and_processes_data --
+2025-06-03 19:19:54,632 - __main__ - INFO - Testando DataAggregator: cache miss e processamento...
+2025-06-03 19:19:54,633 - agents.tools.data_aggregator - INFO - Data Aggregator: Memória de scrapers desatualizada ou vazia. Iniciando coleta...
+2025-06-03 19:19:54,633 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do FabLab...
+2025-06-03 19:19:54,633 - agents.tools.data_aggregator - INFO - Data Aggregator: Coletados 1 itens do FabLab. Processando...
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Processados e adicionados 1 itens do FabLab.
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do Visite São Paulo...
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Coletados 1 itens do Visite São Paulo. Processando...
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Processados e adicionados 1 itens do Visite São Paulo.
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do Museus da Wikipédia...
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Coletados 1 itens do Museus da Wikipédia. Processando...
+2025-06-03 19:19:54,634 - agents.tools.data_aggregator - INFO - Data Aggregator: Processados e adicionados 1 itens do Museus da Wikipédia.
+2025-06-03 19:19:54,635 - agents.tools.data_aggregator - INFO - Data Aggregator: Total de itens combinados de todos os scrapers e armazenados na memória: 3.
+2025-06-03 19:19:54,635 - __main__ - INFO - Teste DataAggregator: cache miss e processamento concluído.
+2025-06-03 19:19:54,635 - __main__ - INFO - -- Finalizando teste: test_cache_miss_calls_scrapers_and_processes_data --
+
+2025-06-03 19:19:54,635 - __main__ - INFO - -- Iniciando teste: test_scraper_failure_continues_with_others --
+2025-06-03 19:19:54,635 - __main__ - INFO - Testando DataAggregator: falha em um scraper...
+2025-06-03 19:19:54,636 - agents.tools.data_aggregator - INFO - Data Aggregator: Memória de scrapers desatualizada ou vazia. Iniciando coleta...
+2025-06-03 19:19:54,636 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do FabLab...
+2025-06-03 19:19:54,636 - agents.tools.data_aggregator - ERROR - Data Aggregator: Erro ao buscar itens do FabLab: Erro no scraper FabLab
+Traceback (most recent call last):
+  File "/Users/tnobremasc/workspace/smart-places-children-and-teenagers-SP/agents/tools/data_aggregator.py", line 134, in get_all_events_from_scrapers_with_memory
+    items = scraper_func()
+            ^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/unittest/mock.py", line 1124, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/unittest/mock.py", line 1128, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnobremasc/.pyenv/versions/3.11.11/lib/python3.11/unittest/mock.py", line 1183, in _execute_mock_call
+    raise effect
+Exception: Erro no scraper FabLab
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do Visite São Paulo...
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Coletados 1 itens do Visite São Paulo. Processando...
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Processados e adicionados 1 itens do Visite São Paulo.
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Buscando dados do Museus da Wikipédia...
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Coletados 1 itens do Museus da Wikipédia. Processando...
+2025-06-03 19:19:54,640 - agents.tools.data_aggregator - INFO - Data Aggregator: Processados e adicionados 1 itens do Museus da Wikipédia.
+2025-06-03 19:19:54,641 - agents.tools.data_aggregator - INFO - Data Aggregator: Total de itens combinados de todos os scrapers e armazenados na memória: 2.
+2025-06-03 19:19:54,641 - __main__ - INFO - Teste DataAggregator: falha em um scraper concluído.
+2025-06-03 19:19:54,641 - __main__ - INFO - -- Finalizando teste: test_scraper_failure_continues_with_others --
+
+2025-06-03 19:19:54,641 - __main__ - INFO - 
+======================================================================
+RESULTADO FINAL DOS TESTES DE FERRAMENTAS
+======================================================================
+2025-06-03 19:19:54,642 - __main__ - INFO - Testes executados: 17
+2025-06-03 19:19:54,642 - __main__ - INFO - Falhas: 0
+2025-06-03 19:19:54,642 - __main__ - INFO - Erros: 0
+2025-06-03 19:19:54,642 - __main__ - INFO - Testes pulados: 0
+2025-06-03 19:19:54,642 - __main__ - INFO - ======================================================================
+FIM DA EXECUÇÃO DOS TESTES DE FERRAMENTAS
+======================================================================
