@@ -62,8 +62,22 @@ st.set_page_config(
     layout="wide"
 )
 
-# Título e introdução
-st.title("🎭 Agente Cultural de São Paulo")
+# Cabeçalho com logo e informações da comunidade
+col1, col2 = st.columns([1, 4])
+
+with col1:
+    # Logo da comunidade AI Tinkerers
+    try:
+        st.image("interface/img/aitink.png", width=120)
+    except:
+        st.markdown("🤖")  # Fallback se a imagem não carregar
+
+with col2:
+    st.title("🎭 Agente Cultural de São Paulo")
+    st.markdown("**🌎 AI Tinkerers São Paulo (SP)**")
+
+
+st.markdown("---")
 st.markdown("Use o chat abaixo para interagir com o agente e descobrir eventos culturais, oficinas e exposições na cidade!")
 
 # Mensagem de boas-vindas
@@ -257,7 +271,8 @@ with chat_col:
                     logger.info(f"Geocodificação concluída. {sum(1 for ev in st.session_state.current_events_found if ev.get('latitude') is not None)} eventos com coordenadas.")
 
     # Informação sobre o projeto
-    st.info("Desenvolvido como parte de um projeto de IA.")
+    st.markdown("---")
+    st.markdown("*Desenvolvido pela comunidade **🌎 AI Tinkerers São Paulo (SP)***")
 
 # ============================================================================
 # Interface do Mapa
@@ -314,6 +329,36 @@ with map_col:
 
 if "error_message" in st.session_state and st.session_state.error_message:
     st.error(st.session_state.error_message)
+
+# ============================================================================
+# Rodapé da Comunidade
+# ============================================================================
+
+# Sobre a comunidade
+with st.expander("ℹ️ Sobre o AI Tinkerers São Paulo"):
+    st.markdown("""
+    **Missão:** Conectar e fortalecer a comunidade de desenvolvedores, engenheiros, pesquisadores e empreendedores de IA em São Paulo, promovendo a experimentação prática e o compartilhamento de conhecimento em aplicações inovadoras de IA generativa.
+    
+    **Público-alvo:** Profissionais técnicos ativos na construção de soluções com modelos fundacionais, LLMs, agentes autônomos, ferramentas de IA generativa e aplicações práticas de IA.
+    """)
+
+
+st.markdown("---")
+
+col_footer1, col_footer2 = st.columns([1, 1])
+
+
+with col_footer1:
+    st.markdown("### 🌎 AI Tinkerers São Paulo")
+    st.markdown("**📧 community@aitinkererssp.com**")
+    st.markdown("*Conectando desenvolvedores e pesquisadores de IA em São Paulo*")
+
+with col_footer2:
+    st.markdown("### 🤖 Sobre este Projeto")
+    st.markdown("Agente Cultural desenvolvido com:")
+    st.markdown("• Google AI ADK & Gemini 2.0")
+    st.markdown("• Streamlit & Python")
+    st.markdown("• APIs de São Paulo")
 
 # ============================================================================
 # Execução Local

@@ -1,0 +1,10 @@
+# Arquivos de log e temporários
+*.log
+venv/
+__pycache__/
+.env
+agents/logs_sessions/*.csv
+.DS_Store
+
+# Configurações com chaves de API (manter apenas template)
+# agents/config.yaml (comentado para permitir commit das chaves já configuradas) 

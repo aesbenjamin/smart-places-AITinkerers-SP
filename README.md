@@ -125,6 +125,10 @@ smart-places-children-and-teenagers-SP/
 ├── .gitignore                # Arquivos e diretórios ignorados pelo Git
 ├── README.md                 # Este arquivo de documentação principal
 ├── requirements.txt          # Dependências Python do projeto
+├── start_services.sh         # Script para iniciar o servidor ADK e interface Streamlit
+├── test_adk_server.sh        # Script para testar o servidor ADK de forma isolada
+├── adk_server.log            # Log do servidor ADK em execução (gerado automaticamente)
+├── adk_test.log              # Log dos testes do servidor ADK (gerado automaticamente)
 ├── agents/                   # Código fonte principal do agente
 │   ├── __init__.py           # Inicializador do pacote agents, expõe o agente para o ADK
 │   ├── agents.md             # Documentação da estrutura e componentes principais de agents/
@@ -170,6 +174,8 @@ smart-places-children-and-teenagers-SP/
     ├── test_utils.py
     └── tests.md              # Documentação dos testes automatizados
 ```
+
+**Nota sobre Logs**: Os arquivos `adk_server.log` e `adk_test.log` são gerados automaticamente durante a execução e contêm informações detalhadas sobre o funcionamento do sistema. Estes arquivos são essenciais para debugging e monitoramento.
 
 ## Estrutura do Projeto e Documentação Detalhada
 
@@ -227,32 +233,106 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
     ```
 
 4.  **Configure as Chaves de API**:
-    *   Renomeie ou copie o arquivo `agents/config.example.yaml` (se existir) para `agents/config.yaml`.
-    *   Edite `agents/config.yaml` e insira suas chaves de API válidas para:
-        *   `google_maps`: (Opcional para a funcionalidade atual, mas o scraper de mapas pode precisar)
-        *   `gemini_api_key`: Chave da API do Google Gemini.
-        *   `tavily_api_key`: Chave da API do Tavily.
+    *   Edite o arquivo `agents/config.yaml` e insira suas chaves de API válidas para:
+        *   `gemini_api_key`: Chave da API do Google Gemini (obrigatória)
+        *   `tavily_api_key`: Chave da API do Tavily (obrigatória)
+        *   `google_maps`: Chave da API do Google Maps (opcional, mas recomendada)
     *   Você também pode configurar o `model_name` do LLM nesta seção, se desejar.
     *   **Importante**: Não adicione o arquivo `config.yaml` com suas chaves reais ao controle de versão (Git).
 
+5.  **Torne os Scripts Executáveis** (opcional, para facilitar a execução):
+    ```bash
+    chmod +x start_services.sh test_adk_server.sh
+    ```
+
 ## Como Executar a Aplicação
 
-Para interagir com o agente, você precisa iniciar dois componentes: o servidor do Agente ADK e a interface Streamlit.
+### Execução Automatizada (Recomendado)
+
+O projeto inclui um script de inicialização que configura e inicia automaticamente todos os serviços necessários:
+
+```bash
+./start_services.sh
+```
+
+Este script irá:
+- Criar e ativar o ambiente virtual (se necessário)
+- Instalar/atualizar as dependências
+- Verificar se o módulo `google.adk` está funcionando
+- Iniciar o servidor ADK em segundo plano (porta 8000)
+- Iniciar a interface Streamlit (porta 8501)
+- Gerar logs em `adk_server.log`
+
+### Execução Manual
+
+Caso prefira iniciar os componentes separadamente:
 
 1.  **Inicie o Servidor do Agente ADK**:
-    No terminal, a partir do diretório raiz do projeto (`smart-places-children-and-teenagers-SP`), execute:
+    No terminal, a partir do diretório raiz do projeto, execute:
     ```bash
-    adk web
+    python -m google.adk.cli api_server --port=8000 --host=127.0.0.1 agents
     ```
-    Isso iniciará o servidor ADK, geralmente em `http://localhost:8000`. Você verá logs no console indicando que o servidor está rodando e que o `CulturalAgentSP` foi carregado.
+    Isso iniciará o servidor ADK em `http://localhost:8000`.
 
 2.  **Inicie a Interface Streamlit**:
-    Em um **novo terminal** (com o ambiente virtual ativado), a partir do diretório raiz do projeto, execute:
+    Em um **novo terminal** (com o ambiente virtual ativado), execute:
     ```bash
     streamlit run interface/app.py
     ```
-    Isso abrirá a interface web no seu navegador, geralmente em `http://localhost:8501`. Você poderá então conversar com o agente através desta interface.
+    Isso abrirá a interface web no seu navegador em `http://localhost:8501`.
 
+### Teste Isolado do Servidor ADK
+
+Para testar apenas o servidor ADK sem a interface Streamlit:
+
+```bash
+./test_adk_server.sh
+```
+
+Este script verifica se todas as dependências estão funcionando e inicia o servidor ADK com logs detalhados em `adk_test.log`.
+
+## Logs e Troubleshooting
+
+### Arquivos de Log
+
+O projeto gera automaticamente arquivos de log para facilitar o diagnóstico de problemas:
+
+- **`adk_server.log`**: Log detalhado do servidor ADK em execução, incluindo:
+  - Carregamento de configurações e chaves de API
+  - Processamento de requisições do usuário
+  - Execução de ferramentas (scrapers, busca web, LLM)
+  - Respostas geradas pelo agente
+
+- **`adk_test.log`**: Log específico dos testes do servidor ADK, gerado pelo script `test_adk_server.sh`
+
+### Verificação de Status
+
+Para verificar se os serviços estão funcionando:
+
+```bash
+# Verificar se o servidor ADK está rodando
+curl http://localhost:8000/docs
+
+# Verificar processos em execução
+ps aux | grep -E "(adk|streamlit)" | grep -v grep
+
+# Monitorar logs em tempo real
+tail -f adk_server.log
+```
+
+### Problemas Comuns
+
+1. **Erro "API key not valid"**: 
+   - Verifique se as chaves de API no arquivo `agents/config.yaml` são válidas
+   - Restart o servidor após alterar as chaves
+
+2. **Servidor ADK não inicia**:
+   - Execute `./test_adk_server.sh` para diagnóstico detalhado
+   - Verifique se o módulo `google.adk` está instalado: `python -c "from google import adk"`
+
+3. **Interface Streamlit não conecta**:
+   - Verifique se o servidor ADK está rodando na porta 8000
+   - Confirme que não há conflitos de porta
 
 ## Organização Interna do Código e Testes
 

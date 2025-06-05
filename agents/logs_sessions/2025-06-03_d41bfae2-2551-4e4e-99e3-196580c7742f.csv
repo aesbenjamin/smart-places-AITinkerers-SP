@@ -1,7 +1,0 @@
-"timestamp","session_id","level","module","function","message","user_input","agent_response"
-"2025-06-03 22:48:31.114","d41bfae2-2551-4e4e-99e3-196580c7742f","INFO","cultural_agent","_run_async_impl","ContextVar current_session_id_var definido para: d41bfae2-2551-4e4e-99e3-196580c7742f. Iniciando processamento do agente.","",""
-"2025-06-03 22:48:31.114","d41bfae2-2551-4e4e-99e3-196580c7742f","INFO","cultural_agent","_run_async_impl","Entrada do Usuário","boa noite",""
-"2025-06-03 22:48:32.924","d41bfae2-2551-4e4e-99e3-196580c7742f","INFO","cultural_agent","_run_async_impl","Resposta do Agente","","Olá! Em que posso ajudar você hoje? Está procurando algum evento cultural, museu ou atividade de lazer em São Paulo?
-"
-"2025-06-03 22:48:32.926","d41bfae2-2551-4e4e-99e3-196580c7742f","INFO","cultural_agent","_run_async_impl","Processamento do agente concluído para sessão: d41bfae2-2551-4e4e-99e3-196580c7742f.","",""
-"2025-06-03 22:48:32.926","d41bfae2-2551-4e4e-99e3-196580c7742f","INFO","cultural_agent","_run_async_impl","ContextVar current_session_id_var resetado para sessão: d41bfae2-2551-4e4e-99e3-196580c7742f.","",""
